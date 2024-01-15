@@ -376,6 +376,9 @@ extension TrackersViewController: TrackersViewControllerProtocol {
 
 // MARK: TrackCollectionActionDelegate
 extension TrackersViewController: TrackCollectionActionDelegate {
+    func giveActualDate() -> Date {
+        datePiker.date
+    }
     
     // Метод вызываемый делегирующим объектом(коллекцией) реагирует на изменение состояния кнопки в ячейки
     func didCompleteTracker(_ trackerId: UInt) {
@@ -682,12 +685,12 @@ extension TrackersViewController: ActionFilterDelegate {
                 self?.filterButton.titleLabel?.textColor = .white
             }
         case .trackForActualDate:
-            
             DispatchQueue.main.async { [weak self] in
                 self?.noTrackImageView.layer.zPosition = 0
                 self?.questionLabel.layer.zPosition = 0
                 self?.filterButton.titleLabel?.textColor = .white
                 self?.datePiker.setDate(Date(), animated: true)
+                self?.labelForDataPiker.text = self?.datePiker.date.toShortFormat()
                 self?.track?.changeFilter(day: self?.giveDayNow() ?? 0)
             }
             filterUserDefaults.chooseFilter = .allTracks
