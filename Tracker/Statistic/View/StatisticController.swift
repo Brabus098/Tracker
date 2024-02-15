@@ -36,6 +36,7 @@ final class StatisticController: UIViewController {
         setupViewsConstraint()
         bind()
     }
+    
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         checkUpdate()
