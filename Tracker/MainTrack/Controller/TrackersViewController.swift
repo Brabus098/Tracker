@@ -26,8 +26,7 @@ final class TrackersViewController: UIViewController {
         button.layer.cornerRadius = 16
         button.layer.masksToBounds = true
         
-        button.setTitle("Фильтры", for: .normal)
-        
+        button.setTitle(NSLocalizedString("Filters", comment: ""), for: .normal)
         button.backgroundColor = UIColor.filterButton
         button.addAction(UIAction {[weak self]_ in
             let controller = TrackFilterController()
