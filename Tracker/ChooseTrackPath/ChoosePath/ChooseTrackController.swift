@@ -42,12 +42,17 @@ final class ChooseTrackController: UIViewController{
         button.layer.masksToBounds = true
         button.layer.cornerRadius = 16
         
-        button.isEnabled = false
-        
         button.addAction(UIAction(handler: { _ in
             
-            let unRegularController = UnRegularController()
+            let emojiCollection = EmojiCollection()
+            let colorCollection = ColorCollection()
             
+            let unRegularController = UnRegularController(emojiCollection: emojiCollection, colorCollection: colorCollection)
+            
+            let trackModel = RegularTrackModel()
+            let trackViewModel = TrackViewModel(for: trackModel)
+            
+            unRegularController.initialize(viewModel: trackViewModel)
             unRegularController.onDataCreated = { [weak self] newArray in
                 self?.parentTrackerVC?.updateCategoriesArray(new: newArray)
             }

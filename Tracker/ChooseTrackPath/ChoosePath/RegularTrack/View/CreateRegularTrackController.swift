@@ -89,7 +89,7 @@ final class CreateRegularTrackController: UIViewController {
     // Collections
     private var emojiCollection: EmojiCollectionProtocol?
     private var colorCollection: ColorCollectionProtocol?
-    weak var track: TrackCollectionProtocol?
+   // weak var track: TrackCollectionProtocol?
     
     
     // MARK: Lifecycle
@@ -383,7 +383,7 @@ extension CreateRegularTrackController: UITableViewDataSource, UITableViewDelega
 // MARK: Methods calls trackViewModel
 extension CreateRegularTrackController: TextFieldControllerProtocol {
     
-    // метод обновляет начзвание трека - реагирует на байдинг titleOfTrack
+    // метод обновляет название трека - реагирует на байдинг titleOfTrack
     func updateTitle(title: String){
         titleOfTrack = title
         if !title.isEmpty {
@@ -405,7 +405,6 @@ extension CreateRegularTrackController: TextFieldControllerProtocol {
             self.view.layoutIfNeeded()
         }
     }
-    
 }
 
 // MARK: Methods update the cells "Категории", "Расписание"
