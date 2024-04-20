@@ -12,24 +12,34 @@ final class TrackerStoreWriter: TrackerWriterProtocol {
     }
     
     // Метод создает трек по данным из формы и добвлет в БД
-    func createTracker(_ tracker: Tracker, category: TrackerCategoryCoreData) throws -> TrackerCoreData {
+    func createTracker(_ tracker: Tracker, category: TrackerCategoryCoreData, dateOfCreated: String? = nil) throws -> TrackerCoreData {
         try context.performAndWait {
             let trackerCoreData = TrackerCoreData(context: context)
-            
             trackerCoreData.id = Int16(tracker.id)
             trackerCoreData.name = tracker.name
             trackerCoreData.color = tracker.color
             trackerCoreData.emoji = tracker.emoji
             trackerCoreData.category = category
             
-            try setupTimeTable(for: tracker, trackerCoreData: trackerCoreData)
+            // Добвлена новая развилка для разделения регулирных и нерегулярных треков
+            if tracker.timeTable.dayOfWeek.isEmpty {
+                trackerCoreData.isRegular = false
+                let timeTable = TimeTableCoreData(context: context)
+                timeTable.dayCount = 0
+                timeTable.tracker = trackerCoreData
+                trackerCoreData.creationDate = dateOfCreated
+            } else {
+                trackerCoreData.isRegular = true
+                trackerCoreData.creationDate = ""
+                setupTimeTable(for: tracker, trackerCoreData: trackerCoreData)
+            }
             
             return trackerCoreData
         }
     }
     
     // Метод сохраняет дни для повторения привычки
-    private func setupTimeTable(for tracker: Tracker, trackerCoreData: TrackerCoreData) throws {
+    private func setupTimeTable(for tracker: Tracker, trackerCoreData: TrackerCoreData) {
         let timeTable = TimeTableCoreData(context: context)
         timeTable.dayCount = Int32(tracker.timeTable.dayCount)
         timeTable.tracker = trackerCoreData

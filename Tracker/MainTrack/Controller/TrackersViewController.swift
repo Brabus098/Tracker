@@ -125,6 +125,7 @@ final class TrackersViewController: UIViewController {
     }
     
     func bind(){
+                
         viewModel.searchStatus = { [weak self] status in
             self?.changeStateCollection(status: status)
         }
@@ -259,7 +260,7 @@ final class TrackersViewController: UIViewController {
         
         NotificationCenter.default.addObserver(forName: Notification.Name("categoryNameDidUpdate"), object: nil, queue: nil, using: {[weak self] _ in
             let selectedFormattedDate = WeekDays(rawValue: self?.giveDayNow() ?? 0) // определяем номер дня недели
-            self?.track?.updateForDay(selectedFormattedDate?.rawValue ?? 0 )
+            self?.track?.updateForDay(selectedFormattedDate?.rawValue ?? 0, dateForFilter: self?.datePiker.date.toShortFormat() ?? "")
         })
     }
     
@@ -288,7 +289,7 @@ final class TrackersViewController: UIViewController {
     
     @objc private func leftButtonTapped(){
         sendMetrics(mainAction: "AddTrack", metricsAction: .addTrack)
-        let createTrackController = ChooseTrackController()
+        let createTrackController = ChooseTrackController(store: trackerCategoryStore, dateOfTrackCreated: giveActualDate().toShortFormat())
         createTrackController.parentTrackerVC = self
         
         let trackNavigation = UINavigationController(rootViewController: createTrackController)
@@ -350,7 +351,7 @@ extension TrackersViewController {
         let selectedFormattedDate = WeekDays(rawValue: weekday) // определяем номер дня недели
         track?.currentDate = sender.date // задаем выбранную дату чтобы отключить активность кнопок
         
-        let actualCountOfTrackForDay = track?.updateForDay(selectedFormattedDate?.rawValue ?? 0 )
+        let actualCountOfTrackForDay = track?.updateForDay(selectedFormattedDate?.rawValue ?? 0 , dateForFilter: datePiker.date.toShortFormat())
         makeCollectionInvisible(count: actualCountOfTrackForDay ?? 0)
         // определяем день недели для выбранной даты
         filterDidUpdate()
@@ -388,7 +389,7 @@ extension TrackersViewController: TrackCollectionActionDelegate {
     }
     
     func changeStateCollection(status: Bool) {
-        
+        //makeCollectionInvisible(count: 1)
         if status {
             track?.collection.isHidden = false
             changeImage(status: false)
@@ -424,7 +425,7 @@ extension TrackersViewController: TrackCollectionActionDelegate {
     }
     
     // Метод коллекции срабатывает если треков на выбранный день нет
-    private func makeCollectionInvisible(count: Int){
+    func makeCollectionInvisible(count: Int) {
         
         if count == 0 {
             track?.collection.layer.opacity = 0
@@ -597,7 +598,7 @@ extension TrackersViewController {
             if searchBar.text?.isEmpty == true {
                 track?.collection.isHidden = false
                 changeImage(status: false)
-                track?.changeFilter(day: giveDayNow())
+                track?.changeFilter(day: giveDayNow(), dateForFilter: self.datePiker.date.toShortFormat() ?? "")
             }
         }
     }
@@ -649,7 +650,7 @@ extension TrackersViewController: UISearchBarDelegate {
         if searchBar.text?.isEmpty == true {
             track?.collection.isHidden = false
             changeImage(status: false)
-            track?.changeFilter(day: giveDayNow())
+            track?.changeFilter(day: giveDayNow(), dateForFilter: self.datePiker.date.toShortFormat() ?? "")
         } else {
             track?.findText(title: searchText, store: storeReader)
         }
@@ -658,7 +659,7 @@ extension TrackersViewController: UISearchBarDelegate {
     func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
         track?.collection.isHidden = false
         changeImage(status: false)
-        track?.changeFilter(day: giveDayNow())
+        track?.changeFilter(day: giveDayNow(), dateForFilter: self.datePiker.date.toShortFormat() ?? "")
     }
     
     func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
@@ -680,7 +681,7 @@ extension TrackersViewController: ActionFilterDelegate {
             DispatchQueue.main.async { [weak self] in
                 self?.noTrackImageView.layer.zPosition = 0
                 self?.questionLabel.layer.zPosition = 0
-                self?.track?.changeFilter(day: self?.giveDayNow() ?? 0)
+                self?.track?.changeFilter(day: self?.giveDayNow() ?? 0, dateForFilter: self?.datePiker.date.toShortFormat() ?? "")
                 self?.filterButton.titleLabel?.textColor = .white
             }
         case .trackForActualDate:
@@ -690,7 +691,7 @@ extension TrackersViewController: ActionFilterDelegate {
                 self?.filterButton.titleLabel?.textColor = .white
                 self?.datePiker.setDate(Date(), animated: true)
                 self?.labelForDataPiker.text = self?.datePiker.date.toShortFormat()
-                self?.track?.changeFilter(day: self?.giveDayNow() ?? 0)
+                self?.track?.changeFilter(day: self?.giveDayNow() ?? 0, dateForFilter:self?.datePiker.date.self.toShortFormat() ?? "")
             }
             filterUserDefaults.chooseFilter = .allTracks
         case .didTracks:

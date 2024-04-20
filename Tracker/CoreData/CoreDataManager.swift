@@ -339,6 +339,8 @@ extension CoreDataManager {
                 Name: \(tracker.name ?? "nil")
                 Color: \(tracker.color ?? "nil")
                 Emoji: \(tracker.emoji ?? "nil")
+                StatusTrack: \(tracker.isRegular)
+                Date: \(tracker.creationDate)
                 DayCount: \(tracker.timeTable?.dayCount)
                 RecordSet: \(String(describing: tracker.records?.completitionDate))
                 DayForRep: \(dayNames)
@@ -389,6 +391,8 @@ extension CoreDataManager {
                 
                 print("""
                 📊 Tracker: \(trackerName) (ID: \(trackerID))
+                Date: \(record.tracker?.creationDate)
+                Status: \(record.tracker?.isRegular)
                 📅 Completion Dates: \(completionDates)
                 🔢 Total Completions: \(completionDates.count)
                 ---

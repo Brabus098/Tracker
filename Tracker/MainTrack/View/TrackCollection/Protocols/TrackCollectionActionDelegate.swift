@@ -6,4 +6,5 @@ protocol TrackCollectionActionDelegate: AnyObject {
     func changeStateCollection(status: Bool)
     func showNotFoundImage(status: Bool)
     func giveActualDate() -> Date
+    func makeCollectionInvisible(count: Int)
 }

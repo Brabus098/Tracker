@@ -13,7 +13,7 @@ final class TrackerCategoryStore { // класс отвечает за дост�
         self.trackerRider = trackerRider
     }
     
-    func addNewTrackerCategory(_ categories: [TrackerCategory]) throws {
+    func addNewTrackerCategory(_ categories: [TrackerCategory], dateOfCreated: String? = nil) throws {
         try context.performAndWait {
             
             for category in categories {
@@ -23,7 +23,7 @@ final class TrackerCategoryStore { // класс отвечает за дост�
                 for tracker in category.trackerArray {
                     // если в этой категории трека с таким id нету, создаем его
                     if !checkAdded(trackWithId: tracker) {
-                        let trackerCoreData = try trackerWriter.createTracker(tracker, category: categoryCoreData)
+                        let trackerCoreData = try trackerWriter.createTracker(tracker, category: categoryCoreData, dateOfCreated: dateOfCreated)
                         categoryCoreData.addToTracker(trackerCoreData)
                     }
                 }

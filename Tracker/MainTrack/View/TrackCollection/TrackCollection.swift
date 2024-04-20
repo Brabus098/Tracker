@@ -166,9 +166,9 @@ extension TrackCollection: UICollectionViewDelegateFlowLayout{
 // MARK: Filtres methods
 extension TrackCollection {
     // Метод вызываемый контроллером
-    func updateForDay(_ day: Int) -> Int{
+    func updateForDay(_ day: Int, dateForFilter: String) -> Int{
         // Обновляем фильтр в FRC
-        let countTrackForThisDay = trackerStore.updateFilterForDay(day)
+        let countTrackForThisDay = trackerStore.updateFilterForDay(day, currentDate: dateForFilter)
         
         // Перезагружаем коллекцию
         collection.reloadData()
@@ -180,8 +180,8 @@ extension TrackCollection {
         actionDelegate?.changeStateCollection(status: result > 0)
     }
     
-    func changeFilter(day: Int) {
-        trackerStore.updateFilterForDay(day)
+    func changeFilter(day: Int, dateForFilter: String) {
+        trackerStore.updateFilterForDay(day, currentDate: dateForFilter)
     }
     
     func filterForDidTracks(day: Int, date: String) {

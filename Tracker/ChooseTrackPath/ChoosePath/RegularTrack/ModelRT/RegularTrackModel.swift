@@ -7,13 +7,13 @@ final class RegularTrackModel {
     private var categoryForTracks = [TrackerCategory]() // для сохранения новых трекеров и их последующей передачи
     private var daysForRepeatArray = [String]() // временное хранение дней для повторения
     private var daysDictionary = [String: Any]()
-    
+   
     // Метод вызываемый вью моедлью для добавления трека
     func addNewTrackWith(titleOfCategory: String,
                          titleOfTrack: String,
                          color: String,
                          emoji: String,
-                         timeTable: TimeTabel) -> Result<[TrackerCategory], Error>{
+                         timeTable: TimeTabel) -> Result<[TrackerCategory], Error> {
         
         categoryForTracks.append(TrackerCategory(title: titleOfCategory,
                                                  trackerArray: [Tracker(id: UInt.random(in: 1...10000),
@@ -26,6 +26,22 @@ final class RegularTrackModel {
         } else {
             return .failure(TrackerErrors.failToCreateTrack)
         }
+    }
+    
+    func addUnRegularTrackWith(titleOfCategory: String,
+                              titleOfTrack: String,
+                              color: String,
+                              emoji: String,
+                               dateOfCreated: String, store: TrackerCategoryStore) {
+        var tracker = [TrackerCategory(title: titleOfCategory, trackerArray: [Tracker(id: UInt.random(in: 1...10000),
+                                                                                     name: titleOfTrack,
+                                                                                     color: color,
+                                                                                     emoji: emoji,
+                                                                                     timeTable: TimeTabel(dayCount: 0, dayOfWeek: []))])]
+        try? store.addNewTrackerCategory(tracker, dateOfCreated: dateOfCreated)
+        // Передать в модель данные для сохранения
+        // А из модели напрямую в кордата
+        // В методе кордата обрабатывать условия для варианта у которого нету данных об количестве дней в которые его нужно отображать, нужно отображать по дате
     }
     
     // Метод обновляет данные сохраненные подьзователем

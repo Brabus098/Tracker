@@ -81,7 +81,7 @@ final class TrackerStoreReader: NSObject {
     }
     
     // Метод возвращает расписание для трека
-    func convertTimeTable(CoreDatatype: TimeTableCoreData) -> TimeTabel{
+    func convertTimeTable(CoreDatatype: TimeTableCoreData) -> TimeTabel {
         let count = CoreDatatype.dayCount
         var dayArray = [WeekDay]()
         if let weekDayArray = CoreDatatype.weekDays?.allObjects as? [WeekDayCoreData]{
@@ -155,10 +155,21 @@ extension TrackerStoreReader: TrackerReaderProtocol{
 extension TrackerStoreReader {
     
     // Метод для обновления fetchedResultsController c учетом фильтра по дням
-    func updateFilterForDay(_ day: Int) -> Int {
-        let newPredicate = NSPredicate(format: "ANY timeTable.weekDays.order == %d", day)
-        frc.fetchRequest.predicate = newPredicate
-        delegate?.didUpdateData()
+    func updateFilterForDay(_ day: Int, currentDate: String) -> Int {
+
+        // Создаем сложный предикат для двух типов трекеров
+             let regularPredicate = NSPredicate(format: "isRegular == YES AND ANY timeTable.weekDays.order == %d", day)
+             let irregularPredicate = NSPredicate(format: "isRegular == NO AND creationDate == %@", currentDate)
+             
+             // Объединяем через OR - либо регулярный с подходящим днем, либо нерегулярный с подходящей датой
+             let compoundPredicate = NSCompoundPredicate(orPredicateWithSubpredicates: [
+                 regularPredicate,
+                 irregularPredicate
+             ])
+             
+             frc.fetchRequest.predicate = compoundPredicate
+        
+            delegate?.didUpdateData()
         
         do {
             try frc.performFetch()

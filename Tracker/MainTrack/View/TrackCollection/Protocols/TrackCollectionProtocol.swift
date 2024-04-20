@@ -7,9 +7,9 @@ protocol TrackCollectionProtocol: AnyObject {
     var currentDate: Date { get set }
     func configure(controllerForCollection: TrackCollectionActionDelegate)
     func reloadDataInCollection() // обновление элементов ячейки
-    func updateForDay(_ day: Int) -> Int
+    func updateForDay(_ day: Int, dateForFilter: String) -> Int
     func findText(title: String, store: TrackerStoreReader)
-    func changeFilter(day: Int)
+    func changeFilter(day: Int, dateForFilter: String)
     func filterForDidTracks(day: Int, date: String)
     func filteForUndidTrack(day: Int, date: String)
 }

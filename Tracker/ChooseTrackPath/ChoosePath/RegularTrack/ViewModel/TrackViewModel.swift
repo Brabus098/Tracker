@@ -31,6 +31,9 @@ final class TrackViewModel {
     var oldTimeTable: Binding<TimeTabel>?
     var limitLabel: Binding<Bool>?
     
+    // Для обновления коллекции после добавления нерегулярного действия
+    var needToUpdateCollection: Binding<Bool>?
+    
     private var daysForRepeatArray = [String]() // временное хранение дней для повторения
     
     init(for model: RegularTrackModel) {
@@ -96,6 +99,7 @@ extension TrackViewModel {
                                newTrackName: String?,
                                newColor: String?){
         model.updateDataBase(trackWithGoalTitle: trackWithGoalTitle, newTimeTable: newTimeTable, newCategoryTitle: newCategoryTitle, newEmoji: newEmoji, newTrackName: newTrackName, newColor: newColor)
+  
     }
     
     func fixStateFor(trackTitle: String, state: MenuActions){
@@ -110,7 +114,7 @@ extension TrackViewModel {
     // Метод вызываемый Вью который опопвещает об заполнении всех полей
     func addTrackWith(titleOfCategory: String,
                       titleOfTrack: String,
-                      timeTable: TimeTabel, emojiCol: EmojiCollectionProtocol, colorCol: ColorCollectionProtocol){
+                      timeTable: TimeTabel, emojiCol: EmojiCollectionProtocol, colorCol: ColorCollectionProtocol) {
         let emoji = emojiCol.chooseEmoji
         let color = colorCol.chooseColor
         
@@ -122,6 +126,24 @@ extension TrackViewModel {
         case .failure(let error):
             print("[TrackViewModel]: \(error) to create a track")
         }
+    }
+    
+    // Метод вызываемый из анрегулар контроллера
+    func addUnRegularTrackWith(titleOfCategory: String,
+                               titleOfTrack: String,
+                               date: String,
+                               emojiCol: EmojiCollectionProtocol,
+                               colorCol: ColorCollectionProtocol, store: TrackerCategoryStore) {
+        let emoji = emojiCol.chooseEmoji
+        let color = colorCol.chooseColor
+        model.addUnRegularTrackWith(titleOfCategory: titleOfCategory,
+                                    titleOfTrack: titleOfTrack,
+                                    color: color,
+                                    emoji: emoji,
+                                    dateOfCreated: date,
+                                    store: store)
+        print("Обновляем needToUpdateCollection")
+        needToUpdateCollection?(true)
     }
 }
 

@@ -76,7 +76,7 @@ final class StatisticModel {
             if let allTrackForDay = dict[result ?? .Monday], // Смотрим оптимальное количество дней для этого дня недели
                let didTrackers = dateDictionary[i] { // сколько треков выполнено
                 
-                if allTrackForDay == didTrackers {
+                if allTrackForDay <= didTrackers {
                     perfectDayCount += 1 // +1 идеальный день
                     let newRecordStateChanged = isToBackDay(nextDayDate: i) // проверяем подяд ли идут даты
                     if newRecordStateChanged && localValueRecord + 1 > localValueRecord {

@@ -4,19 +4,19 @@ import UIKit
 
 final class UnRegularController: UIViewController {
     
-    // Замыкание, принимающее данные (TrackerCategory)
-    var onDataCreated: (([TrackerCategory]) -> Void)?
-    
     // MARK: Properties
     private let table = UITableView()
     private let stackView = UIStackView()
     private let scrollView = UIScrollView()
     private var textFieldView: CustomTextFieldProtocol?
+    var trackDelegate: TrackCollectionActionDelegate?
     
     // MARK: DataBase properties
     private var dataBase = ["Категория"]
     private var categoryTitle = String() // для сохранения названия категории
     var titleOfTrack = "" // для сохранения названия трека
+    var currentDate: String?
+    var store: TrackerCategoryStore?
     
     // MARK: ViewModel
     private var viewModel: TrackViewModel?
@@ -60,8 +60,15 @@ final class UnRegularController: UIViewController {
         
         button.addAction(UIAction(handler: { [weak self] _ in
             
-            //            guard let timeRepeate = self?.timeForRepeat, let mainTitle = self?.categoryTitle, let trackTitle = self?.titleOfTrack  else { return }
-            //            self?.viewModel?.addTrackWith(titleOfCategory: mainTitle, titleOfTrack: trackTitle, timeTable: timeRepeate, emojiCol: self?.emojiCollection ?? EmojiCollection(), colorCol: self?.colorCollection ?? ColorCollection()) // Оправляем данные во вью модель
+            guard let currentDate = self?.currentDate,
+                                let mainTitle = self?.categoryTitle,
+                                let trackTitle = self?.titleOfTrack  else { return }
+            
+            self?.viewModel?.addUnRegularTrackWith(titleOfCategory: mainTitle,
+                                                   titleOfTrack: trackTitle,
+                                                   date: currentDate,
+                                                   emojiCol: self?.emojiCollection ?? EmojiCollection(),
+                                                   colorCol: self?.colorCollection ?? ColorCollection(), store: self?.store ?? TrackerCategoryStore(trackerWriter: TrackerStoreWriter( recordStore: TrackerRecordStore()), trackerRider: TrackerStoreReader()))
             
             self?.dismiss(animated: true)
         }), for: .touchUpInside)
@@ -93,10 +100,12 @@ final class UnRegularController: UIViewController {
         setupKeyboard()
     }
     
-    init(emojiCollection: EmojiCollectionProtocol, colorCollection: ColorCollectionProtocol) {
+    init(emojiCollection: EmojiCollectionProtocol, colorCollection: ColorCollectionProtocol, curentDate: String, trackerCategoryStore: TrackerCategoryStore) {
         super.init(nibName: nil, bundle: nil)
         self.emojiCollection = emojiCollection
         self.colorCollection = colorCollection
+        self.currentDate = curentDate
+        self.store = trackerCategoryStore
     }
     
     required init?(coder: NSCoder) {
@@ -110,15 +119,17 @@ final class UnRegularController: UIViewController {
     
     private func bind() {
         guard let viewModel = viewModel else { return }
-        
-        viewModel.titleOfTrack = { [weak self] newTitle in self?.updateTitle(title: newTitle)
+ 
+        // Работа с названием трека
+        viewModel.titleOfTrack = { [weak self] newTitle in
+            self?.updateTitle(title: newTitle)
         }
         
         viewModel.limitLabel = { [weak self] limitState in
             self?.updateLayout(showLimit: limitState)
         }
         
-        // Обновление ячейки таблицы
+        // Обновление ячейку таблицы
         viewModel.titleOfCategory = { [weak self] actualTitle in
             self?.categoryTitle = actualTitle
             self?.updateCategoriesCell(categoryArray: actualTitle)
@@ -126,6 +137,11 @@ final class UnRegularController: UIViewController {
         
         viewModel.indexPathChooseTitle = {[weak self] newState in
             self?.titleCategoryState = newState // состояние ячейки выбранного элемента на экране категории
+        }
+        
+        viewModel.needToUpdateCollection = { [weak self] statusToUpdate in
+
+            self?.trackDelegate?.makeCollectionInvisible(count: 1)
         }
     }
     
@@ -248,7 +264,6 @@ extension UnRegularController: UITableViewDataSource, UITableViewDelegate {
             createCategoryVC.initialize(viewModel: createCategoryVM)
             
             navigationController?.pushViewController(createCategoryVC, animated: true)
-            
         }
     }
 }
@@ -353,5 +368,3 @@ extension UnRegularController {
         textFieldView?.updateTitleWhenCloseTheKeyboard()
     }
 }
-
-//TODO: ПЕРЕНОС ОСТАТКОВ байндингов КОЛЛЕКЦИИ + сохранение трека + логика отображения 

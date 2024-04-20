@@ -4,6 +4,8 @@ import UIKit
 
 final class ChooseTrackController: UIViewController{
     weak var parentTrackerVC: TrackersViewControllerProtocol? // возможно больше не требуется
+    var store: TrackerCategoryStore
+    var dateOfTrackCreated: String
     
     private lazy var ruttineButton = {
         let button = UIButton()
@@ -47,15 +49,15 @@ final class ChooseTrackController: UIViewController{
             let emojiCollection = EmojiCollection()
             let colorCollection = ColorCollection()
             
-            let unRegularController = UnRegularController(emojiCollection: emojiCollection, colorCollection: colorCollection)
+            let unRegularController = UnRegularController(emojiCollection: emojiCollection, colorCollection: colorCollection, curentDate: self.dateOfTrackCreated, trackerCategoryStore: self.store)
             
             let trackModel = RegularTrackModel()
             let trackViewModel = TrackViewModel(for: trackModel)
             
+            
             unRegularController.initialize(viewModel: trackViewModel)
-            unRegularController.onDataCreated = { [weak self] newArray in
-                self?.parentTrackerVC?.updateCategoriesArray(new: newArray)
-            }
+            unRegularController.trackDelegate = self.parentTrackerVC as? any TrackCollectionActionDelegate
+        
             self.navigationController?.pushViewController(unRegularController, animated: true)
         }), for: .touchUpInside)
         
@@ -69,6 +71,17 @@ final class ChooseTrackController: UIViewController{
         setupNavController()
         setupConstraint()
     }
+    
+    init(store: TrackerCategoryStore, dateOfTrackCreated: String) {
+        self.store = store
+        self.dateOfTrackCreated = dateOfTrackCreated
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
     
     private func setupNavController(){
         navigationController?.navigationItem.leftBarButtonItem = nil
