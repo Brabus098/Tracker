@@ -14,7 +14,7 @@ final class TabBarController: UITabBarController {
         setupTabBar()
     }
     
-    private func setupTabs(){
+    private func setupTabs() {
         
         let model = RegularTrackModel()
         let viewModel = TrackViewModel(for: model)
