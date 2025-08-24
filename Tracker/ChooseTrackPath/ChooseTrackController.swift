@@ -3,7 +3,7 @@
 import UIKit
 
 final class ChooseTrackController: UIViewController{
-    var parentTrackerVC: TrackersViewControllerProtocol?
+    weak var parentTrackerVC: TrackersViewControllerProtocol?
 
     private lazy var ruttineButton = {
         let button = UIButton()
@@ -13,8 +13,10 @@ final class ChooseTrackController: UIViewController{
         button.layer.masksToBounds = true
         button.layer.cornerRadius = 16
         button.addAction(UIAction(handler: { _ in
-
-            let newController = CreateRegularTrackController()
+            
+            let emojiCollection = EmojiCollection()
+            let colorCollection = ColorCollection()
+            let newController = CreateRegularTrackController(emojiCollection: emojiCollection, colorCollection: colorCollection)
             
             newController.onDataCreated = { [weak self] newArray in
                 self?.parentTrackerVC?.updateCategoriesArray(new: newArray)

@@ -1,6 +1,7 @@
 //  TrackCollection.swift
 
 import UIKit
+import CoreData
 
 final class TrackCollection: NSObject, UICollectionViewDataSource {
     
@@ -9,56 +10,98 @@ final class TrackCollection: NSObject, UICollectionViewDataSource {
         let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
         return collectionView
     }()
-    let paramsForTrack = GeometricParams(cellCount: 2, leftInsert: 16, rightInsert: 16, cellSpacing: 9)
     
-    weak var actionDelegate: TrackCollectionActionDelegate? // делегат для передачи инфы о нажатии на кнопку
+    private let paramsForTrack = GeometricParams(cellCount: 2, leftInsert: 16, rightInsert: 16, cellSpacing: 9)
+    
+    weak var actionDelegate: TrackCollectionActionDelegate?
+    
+    // MARK: Stores
+    private let trackerStore: TrackerStoreReader
+    private let recordStore: TrackerRecordStoreProtocol
+    
+    var currentDate: Date = Date()
+    
+    init(trackerStore: TrackerStoreReader,
+         recordStore: TrackerRecordStoreProtocol) {
+        self.trackerStore = trackerStore
+        self.recordStore = recordStore
+    }
     
     // MARK: DataSource
-    var actualCategories = [TrackerCategory]()
-    var actualTrackRecords = [TrackerRecord]()
-    var currentDate: Date = Date() // выбранная дата
-    
-    // MARK: Setup Collection
     func numberOfSections(in collectionView: UICollectionView) -> Int {
-        actualCategories.count
+        trackerStore.numberOfSections()
     }
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        actualCategories[section].trackerArray.count
+        trackerStore.numberOfItems(in: section)
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "cell", for: indexPath) as? CollectionViewCell else{
+        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "cell", for: indexPath) as? CollectionViewCell else {
             return CollectionViewCell()
         }
         
         cell.delegate = self
         
-        // Подготовка данных для передачи в ячейку
-        let goalTextArray = actualCategories[indexPath.section].trackerArray
-        let goalText = goalTextArray[indexPath.row].name
-        let id = goalTextArray[indexPath.row].id
-        let counter = goalTextArray[indexPath.row].timeTable.dayCount // счетчик с выполнеными днями
-        let buttonState = createButtonState(id: id)
+        guard let tracker = trackerStore.tracker(at: indexPath) else { return cell }
         
-        cell.configurateCell(goalText: goalText, indexPath: indexPath, trackerId: id, counter: counter, button: buttonState)
+        let buttonState = createButtonState(id: Int16(tracker.id))
+        
+        cell.configurateCell(
+            goalText: tracker.name,
+            indexPath: indexPath,
+            trackerId: Int16(tracker.id),
+            counter: Int32(tracker.timeTable.dayCount),
+            button: buttonState,
+            emoji: tracker.emoji,
+            color: tracker.color.toUIColor()
+        )
         
         return cell
     }
     
-    private func createButtonState(id: UInt) -> ButtonState {
-        // Настройка состояния кнопки
+    private func createButtonState(id: Int16) -> ButtonState {
         let actualDate = Date()
         var buttonState: ButtonState = .normal
         
-        // Проверка: выбрана ли корректная дата
+        let checkResult = trackerStore.checkContainsDate(id: id, date: currentDate.formatted().dataFormatter())
+        
         if currentDate > actualDate {
             buttonState = .unActive
-            // Проверка: если дата корректная то содержится ли для этого id выбранная дата, если да меняем состояние на выполненное
-        } else if actualTrackRecords.contains(where: { $0.id == id && $0.trackCompletionDate.contains(currentDate.formatted()) }) {
+        } else if checkResult {
             buttonState = .selected
         }
         return buttonState
+    }
+}
+extension TrackCollection: TrackCollectionProtocol {
+    
+    func configure(controllerForCollection: TrackCollectionActionDelegate) {
+        actionDelegate = controllerForCollection
+        collection.register(CollectionViewCell.self, forCellWithReuseIdentifier: "cell")
+        collection.register(HeaderViewForCell.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: "header")
+        collection.dataSource = self
+        collection.delegate = self
+        trackerStore.delegate = self
+    }
+    // метод обновляет состояние кнопки
+    func reloadData() {
+        collection.reloadData()
+    }
+}
+
+extension TrackCollection: TrackerCellDelegate {
+    func didTapPlusButton(for trackerId: UInt) {
+        actionDelegate?.didCompleteTracker(trackerId)
+    }
+}
+
+extension TrackCollection: TrackerStoreDelegate {
+    // метод обновления коллекция вызываемый FRC
+    func didUpdateData() {
+        DispatchQueue.main.async {
+            self.collection.reloadData()
+        }
     }
 }
 
@@ -94,13 +137,14 @@ extension TrackCollection: UICollectionViewDelegateFlowLayout{
         }
         
         guard let view = collection.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: id, for: indexPath) as? HeaderViewForCell else { return UICollectionReusableView()}
-        let headerText = actualCategories[indexPath.section].title
+        
+        let headerText = trackerStore.titleForSection(indexPath.section)
         
         view.configure(header: headerText)
         return view
     }
     
-    // Метод настривает размер хедера
+    // Метод настраивает размер хедера
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, referenceSizeForHeaderInSection section: Int) -> CGSize {
         let headerView = HeaderViewForCell(frame: CGRect(x: 0, y: 0, width: collectionView.frame.width, height: 0))
         headerView.configure(header: "Header")
@@ -118,49 +162,16 @@ extension TrackCollection: UICollectionViewDelegateFlowLayout{
     }
 }
 
-extension TrackCollection: TrackCollectionProtocol{
-    
-    func configure(collection dataBase: [TrackerCategory], controllerForCollection: TrackCollectionActionDelegate, completedTrackers: [TrackerRecord]) {
-        actionDelegate = controllerForCollection
-        collection.register(CollectionViewCell.self, forCellWithReuseIdentifier: "cell")
-        collection.register(HeaderViewForCell.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: "header")
-        collection.dataSource = self
-        collection.delegate = self
-        actualCategories = dataBase
-        actualTrackRecords = completedTrackers
-    }
-    
-    func reloadData(with categories: [TrackerCategory], and trackRecords: [TrackerRecord], choseDate: Date) {
-        actualCategories = categories
-        actualTrackRecords = trackRecords
-        currentDate = choseDate
+// MARK: Filtres methods
+extension TrackCollection {
+    // Метод вызываемый контроллером
+    func updateForDay(_ day: Int) -> Int{
+        // Обновляем фильтр в FRC
+        let countTrackForThisDay = trackerStore.updateFilterForDay(day)
+        
+        // Перезагружаем коллекцию
         collection.reloadData()
-    }
-    
-    func reloadRows(newData: [TrackerCategory], section: Int, choseDate: Date, trackerRecords: [TrackerRecord]) {
         
-        actualCategories = newData
-        actualTrackRecords = trackerRecords
-        currentDate = choseDate
-        
-        let oldCount = actualCategories[section].trackerArray.count
-        let newCount = actualCategories[section].trackerArray.count
-        
-        collection.performBatchUpdates {
-            if newCount > oldCount {
-                let indexes = (oldCount..<newCount).map { IndexPath(item: $0, section: section) }
-                collection.insertItems(at: indexes)
-            } else if newCount < oldCount {
-                let indexes = (newCount..<oldCount).map { IndexPath(item: $0, section: section) }
-                collection.deleteItems(at: indexes)
-            }
-        }
+        return countTrackForThisDay
     }
 }
-
-extension TrackCollection: TrackerCellDelegate {
-    func didTapPlusButton(for trackerId: UInt) {
-        actionDelegate?.didCompleteTracker(trackerId) // оповещаем делегата о наступлении события
-    }
-}
-

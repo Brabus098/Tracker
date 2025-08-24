@@ -12,10 +12,6 @@ final class CollectionViewCell: UICollectionViewCell {
     private let plusDayButton = UIButton()
     private var buttonState: ButtonState = .normal
     
-    // Mock
-    private let emojiArray = [ "🍇", "🍈", "🍉", "🍊", "🍋", "🍌", "🍍", "🥭", "🍎", "🍏", "🍐", "🍒", "🍓", "🫐", "🥝", "🍅", "🫒", "🥥", "🥑", "🍆", "🥔", "🥕", "🌽", "🌶️", "🫑", "🥒", "🥬", "🥦", "🧄", "🧅", "🍄"]
-    private let colorArray: [UIColor] = [UIColor.blue, UIColor.purple, UIColor.green]
-    
     // Свойства для передачи информации контроллеру
     private var indexPath: IndexPath?
     private var trackerId: UInt?
@@ -42,32 +38,29 @@ final class CollectionViewCell: UICollectionViewCell {
         addLayers(for: backView, layer: 16)
     }
     
-    // метод генерит рандомные значения для Emoji и цветов
     private func setupEmojiLabel(){
         addSubItem(view: emojiLabel)
         
-        emojiLabel.text = emojiArray.randomElement()
-        countSuccessLabel.text = "0 дней" // Количество выполненных дней
-        let randomColor = colorArray.randomElement()
+       countSuccessLabel.text = "0 дней" // Количество выполненных дней
         
         plusDayButton.backgroundColor = .white
-        backView.backgroundColor = randomColor
+        backView.backgroundColor = .purple
     }
     
     private func setupButton(){
         addSubItem(view: plusDayButton)
-        
+        setActualBackColorForImage()
+        addLayers(for: plusDayButton, layer: 34/2)
+        plusDayButton.addTarget(self, action: #selector(plusButtonTapped(_:)), for: .touchUpInside)
+    }
+    
+    private func setActualBackColorForImage(){
         let image = UIImage(named: "AddButton")?
             .withTintColor(backView.backgroundColor ?? .red, renderingMode: .alwaysOriginal)
         let imageForSelected = UIImage(named: "AddedButton")?
             .withTintColor(backView.backgroundColor ?? .red, renderingMode: .alwaysOriginal)
-        
         plusDayButton.setImage(image, for: .normal)
-        addLayers(for: plusDayButton, layer: 34/2)
         plusDayButton.setImage(imageForSelected, for: .selected)
-        
-        plusDayButton.addTarget(self, action: #selector(plusButtonTapped(_:)), for: .touchUpInside)
-        
     }
     
     @objc private func plusButtonTapped(_ sender: UIButton) {
@@ -86,7 +79,7 @@ final class CollectionViewCell: UICollectionViewCell {
     private func setupEmojiBackground(){
         addSubItem(view: emojiBackColor)
         emojiBackColor.backgroundColor = .emogiBack
-        addLayers(for: emojiBackColor, layer: 24 / 2)
+        addLayers(for: emojiBackColor, layer: 27 / 2)
     }
     
     private func setupCountSuccessLabel(){
@@ -111,11 +104,13 @@ final class CollectionViewCell: UICollectionViewCell {
             goalLabel.leadingAnchor.constraint(equalTo: backView.leadingAnchor, constant: 12),
             goalLabel.heightAnchor.constraint(equalToConstant: 34),
             
-            // Настройка emoji
+            // Настройка emojiBack
             emojiBackColor.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 12),
             emojiBackColor.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 12),
-            emojiBackColor.heightAnchor.constraint(equalToConstant: 24),
-            emojiBackColor.widthAnchor.constraint(equalToConstant: 24),
+            emojiBackColor.heightAnchor.constraint(equalToConstant: 27),
+            emojiBackColor.widthAnchor.constraint(equalToConstant: 27),
+            
+            // Настройка emojilabel
             emojiLabel.centerXAnchor.constraint(equalTo: emojiBackColor.centerXAnchor),
             emojiLabel.centerYAnchor.constraint(equalTo: emojiBackColor.centerYAnchor),
             
@@ -146,14 +141,20 @@ final class CollectionViewCell: UICollectionViewCell {
 
 extension CollectionViewCell {
     
-    func configurateCell(goalText: String,  indexPath: IndexPath, trackerId: UInt, counter: Int, button: ButtonState){
+    func configurateCell(goalText: String,  indexPath: IndexPath, trackerId: Int16, counter: Int32, button: ButtonState, emoji: String, color: UIColor){
         
         buttonState = button
-        goalLabel.text = goalText // Цель трека
-        let ending = findThe(ending: counter)
+        goalLabel.text = goalText
+        emojiLabel.text = emoji
+        emojiLabel.font = UIFont(name: "SFPro-Bold", size: 16)
+        backView.backgroundColor = color
+        
+        setActualBackColorForImage()
+        
+        let ending = findThe(ending: Int(counter))
         countSuccessLabel.text = String(counter) + " " + ending // Количество успешных дней
         self.indexPath = indexPath
-        self.trackerId = trackerId
+        self.trackerId = UInt(trackerId)
         
         // Устанавливаем состояние кнопки в зависимости от buttonState
         switch buttonState {
@@ -167,6 +168,8 @@ extension CollectionViewCell {
             plusDayButton.isSelected = false
             plusDayButton.isEnabled = false
         }
+        
+        print("Сосотояние кнопки - \(plusDayButton.isSelected), \(plusDayButton.isEnabled)")
     }
 }
 
