@@ -58,16 +58,16 @@ final class ChooseTrackController: UIViewController{
         setupConstraint()
     }
     
-    private func findParentTrackerViewController() -> TrackersViewController {
-        var parentResponder: UIResponder? = self
-        while parentResponder != nil {
-            parentResponder = parentResponder?.next
-            if let viewController = parentResponder as? TrackersViewController {
-                return viewController
-            }
-        }
-        fatalError("TrackersViewController not found in responder chain")
-    }
+//    private func findParentTrackerViewController() -> TrackersViewController {
+//        var parentResponder: UIResponder? = self
+//        while parentResponder != nil {
+//            parentResponder = parentResponder?.next
+//            if let viewController = parentResponder as? TrackersViewController {
+//                return viewController
+//            }
+//        }
+//        fatalError("TrackersViewController not found in responder chain")
+//    }
     
     private func setupNavController(){
         navigationController?.navigationItem.leftBarButtonItem = nil

@@ -68,9 +68,7 @@ final class CreateRegularTrackController: UIViewController {
         button.addAction(UIAction(handler: { [weak self] _ in
             let emoji = self?.emojiCollection?.chooseEmoji
             let color = self?.colorCollection?.chooseColor
-            
-            // MARK: СДЕЛАТЬ ПРОВЕРКУ НА СУЩЕСТВОВАНИЕ ТРЕКА ИЗ БД
-            
+                        
             guard let timeRepeate = self?.timeForRepeat, let emoji, let color else { return }
             
             
@@ -120,9 +118,6 @@ final class CreateRegularTrackController: UIViewController {
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         
-        print("Доступная высота экрана:", view.bounds.height - view.safeAreaInsets.top - view.safeAreaInsets.bottom)
-        print("Общая требуемая высота:", stackView.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize).height)
-
     }
     
     override func viewDidLayoutSubviews() {
