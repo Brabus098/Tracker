@@ -218,6 +218,8 @@ extension TrackersViewController: TrackersViewControllerProtocol {
     
     // Метод принимает данные с формы через замыкание
     func updateCategoriesArray(new array: [TrackerCategory]) {
+        print("приняли трек - \(array), все хорошо")
+        
         do {
             try trackerCategoryStore.addNewTrackerCategory(array) // добавляем новый трек в БД
             try CoreDataManager.shared.context.save()
