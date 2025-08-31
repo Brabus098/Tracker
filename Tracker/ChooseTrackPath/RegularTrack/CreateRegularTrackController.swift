@@ -9,11 +9,20 @@ final class CreateRegularTrackController: UIViewController {
     
     // MARK: Properties
     
-    // Констрейнты для изменения отступовв в случае превышения 38 символов на ввод
-    private var topConstraint: NSLayoutConstraint?
-    private var bottomConstraint: NSLayoutConstraint?
+    // Main properties
+    let stackView = UIStackView()
+    let scrollView = UIScrollView()
     private let table = UITableView()
+    var textFieldView: CustomTextFieldProtocol?
+    weak var track: TrackCollectionProtocol? // ссылка на коллекцию
+
+
+    // Collections
+    var emojiCollection: EmojiCollectionProtocol?
+    var colorCollection: ColorCollectionProtocol?
+    
     private let nameForNotification = NSNotification.Name(rawValue: "LabelUpdate")
+    private var tableHeightConstraint: NSLayoutConstraint?
     
     // MARK: DataBase properties
     private var dataBase = ["Категория", "Расписание"]
@@ -21,7 +30,7 @@ final class CreateRegularTrackController: UIViewController {
     private var categoryForTracks = [TrackerCategory]() // для сохранения новых трекеров и их последующей передачи
     private var categoryTitle = String() // для сохранения названия категории
     private var timeForRepeat: TimeTabel? // для сохранения расписания
-    private var titleOfTrack = "" // для сохранения названия трека
+    internal var titleOfTrack = "" // для сохранения названия трека
     
     private lazy var cancelButton = {
         let button = UIButton()
@@ -38,8 +47,11 @@ final class CreateRegularTrackController: UIViewController {
             self?.dismiss(animated: true)
         }), for: .touchUpInside)
         
-        view.addSubview(button)
         button.translatesAutoresizingMaskIntoConstraints = false
+        
+        NSLayoutConstraint.activate([
+            button.heightAnchor.constraint(equalToConstant: 60)
+        ])
         
         return button
     }()
@@ -54,14 +66,20 @@ final class CreateRegularTrackController: UIViewController {
         button.layer.backgroundColor = UIColor.grey.cgColor
         
         button.addAction(UIAction(handler: { [weak self] _ in
-            guard let timeRepeate = self?.timeForRepeat else { return }
+            let emoji = self?.emojiCollection?.chooseEmoji
+            let color = self?.colorCollection?.chooseColor
+            
+            // MARK: СДЕЛАТЬ ПРОВЕРКУ НА СУЩЕСТВОВАНИЕ ТРЕКА ИЗ БД
+            
+            guard let timeRepeate = self?.timeForRepeat, let emoji, let color else { return }
+            
             
             // Сохраняем в модель
             self?.categoryForTracks.append(TrackerCategory(title: self?.categoryTitle ?? "",
-                                                           trackerArray: [Tracker(id: UInt.random(in: 1...100),
+                                                           trackerArray: [Tracker(id: UInt.random(in: 1...10000),
                                                                                   name: self?.titleOfTrack ?? "",
-                                                                                  color: .green,
-                                                                                  emoji: "",
+                                                                                  color: color,
+                                                                                  emoji: emoji,
                                                                                   timeTable: timeRepeate)]))
             self?.categoryForTracks.forEach{ print($0) }
             print("Начинаем отправку данных")
@@ -70,125 +88,84 @@ final class CreateRegularTrackController: UIViewController {
             self?.dismiss(animated: true)
         }), for: .touchUpInside)
         
-        view.addSubview(button)
         button.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            button.heightAnchor.constraint(equalToConstant: 60)
+        ])
         
         return button
-    }()
-    
-    private lazy var nameOfTrack = {
-        let textField = UITextView()
-        
-        //                textField.leftView = paddingView
-        //                textField.leftViewMode = .always
-        //                textField.placeholder = "Введите название трека"
-        textField.textContainerInset = UIEdgeInsets(top: 28, left: 16, bottom: 0, right: 62)
-        textField.font = UIFont(name: "SFPro-Regular", size: 17)
-        textField.backgroundColor = .backgroundDay
-        textField.layer.masksToBounds = true
-        textField.layer.cornerRadius = 16
-        
-        view.addSubview(textField)
-        textField.translatesAutoresizingMaskIntoConstraints = false
-        
-        return textField
-    }()
-    
-    private lazy var cleanTextButton = {
-        let cleanButton = UIButton()
-        
-        cleanButton.setImage(UIImage(named: "CleanButton"), for: .normal)
-        cleanButton.isHidden = true
-        cleanButton.addAction(UIAction(handler: {[weak self] _ in
-            self?.placeholderForTextView.isHidden = false
-            cleanButton.isHidden = true
-            self?.nameOfTrack.text = nil
-            self?.restrictionCount.isHidden = true
-            self?.topConstraint?.constant = 24
-            self?.bottomConstraint?.constant = -430
-            
-            UIView.animate(withDuration: 0.1) {
-                self?.view.layoutIfNeeded()
-            }
-        }), for: .touchUpInside)
-        
-        view.addSubview(cleanButton)
-        cleanButton.translatesAutoresizingMaskIntoConstraints = false
-        
-        return cleanButton
-    }()
-    
-    private lazy var placeholderForTextView = {
-        let text = UILabel()
-        text.text = "Введите название трека"
-        text.font = UIFont(name: "SFPro-Regular", size: 17)
-        text.textColor = .lightGray
-        text.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(text)
-        return text
     }()
     
     private lazy var restrictionCount = {
         var label = UILabel()
         label.text = "Ограничение 38 символов"
-        self.view.addSubview(label)
+        label.textColor = .red
+        label.textAlignment = .center
+        
         label.translatesAutoresizingMaskIntoConstraints = false
-        
-        NSLayoutConstraint.activate([
-            label.centerXAnchor.constraint(equalTo: self.table.centerXAnchor),
-            label.topAnchor.constraint(equalTo: self.nameOfTrack.bottomAnchor, constant: 9),
-            table.topAnchor.constraint(equalTo: label.bottomAnchor, constant: 24)
-        ])
-        label.isHidden = false
-        
-        topConstraint?.constant = 62
-        bottomConstraint?.constant = -380
-        UIView.animate(withDuration: 0.1) {
-            self.view.layoutIfNeeded()
-        }
-        
+        label.isHidden = true
+    
         return label
     }()
     
     // MARK: Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
-        configureViews()
-        setupTable()
-        constraintForViews()
-        addNotification()
+        configureStandartViews()
+        setupMainActorViews()
+        scrollAddStack()
+        addItemAtScroll()
+    }
+    
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        
+        print("Доступная высота экрана:", view.bounds.height - view.safeAreaInsets.top - view.safeAreaInsets.bottom)
+        print("Общая требуемая высота:", stackView.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize).height)
+
+    }
+    
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        updateTableHeight()
+    }
+    
+    init(emojiCollection: EmojiCollectionProtocol, colorCollection: ColorCollectionProtocol) {
+        super.init(nibName: nil, bundle: nil)
+        self.emojiCollection = emojiCollection
+        self.colorCollection = colorCollection
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
     }
     
     // MARK: Setup views methods
+    
+    private func setupMainActorViews(){
+        textFieldView = TextFieldView(controller: self)
+        setupTable()
+        setupCollections()
+    }
+    
+    private func configureStandartViews(){
+        view.backgroundColor = .white
+        addNotification()
+        setupKeyboard()
+        setupNavigationTitle()
+    }
+    
     private func addNotification(){
         NotificationCenter.default.addObserver(self,
                                                selector: #selector(updateRepeatLabelDay),
                                                name: self.nameForNotification,
                                                object: nil)
+
     }
-    
-    private func configureViews(){
-        view.backgroundColor = .white
-        setupNameOfTrackLabel()
-        setupKeyboard()
-        setupNavigationTitle()
-    }
-    
-    private func setupNameOfTrackLabel(){
-        
-        nameOfTrack.delegate = self
-        //        nameOfTrack.addTarget(self, action: #selector(editingDidEnd), for: .editingDidEnd)
-        //        nameOfTrack.addTarget(self, action: #selector(changeValue), for: .editingChanged)
-    }
-    
-    private func setupKeyboard(){
-        let tapCloseKeyboard = UITapGestureRecognizer(target: self, action: #selector(closeKeyBoard))
-        tapCloseKeyboard.cancelsTouchesInView = false
-        view.addGestureRecognizer(tapCloseKeyboard)
-    }
+   
     private func setupNavigationTitle(){
         navigationItem.title = ""
-        
+    
         let titleContainer = UIView()
         navigationItem.titleView = titleContainer
         let titleLabel = UILabel()
@@ -206,27 +183,114 @@ final class CreateRegularTrackController: UIViewController {
         navigationItem.hidesBackButton = true
     }
     
-    @objc private func closeKeyBoard(){
-        cleanTextButton.isHidden = true
-        view.endEditing(true)  // Скрывает клавиатуру для всех полей
-        titleOfTrack = self.nameOfTrack.text
+    private func scrollAddStack(){
+        
+        // Stack
+        stackView.axis = .vertical
+        stackView.spacing = 24
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.contentInsetAdjustmentBehavior = .never // MARK:
+
+        //Scroll
+        scrollView.addSubview(stackView)
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(scrollView)
+        
+        // 3. Добавляем констрейнты
+        NSLayoutConstraint.activate([
+            // ScrollView
+            scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -40),// длинна скролла
+            
+            // StackView внутри ScrollView
+            stackView.topAnchor.constraint(equalTo: scrollView.topAnchor, constant: 24),
+            stackView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor, constant: 16),
+            stackView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor, constant: -16),
+            stackView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
+            
+            // Важно для вертикального скролла:
+            stackView.widthAnchor.constraint(equalTo: scrollView.widthAnchor, constant: -32) // Ширина с учетом отступов
+        ])
     }
     
-    @objc private func editingDidEnd() {
-        cleanTextButton.isHidden = true
+    private func addItemAtScroll(){
+        guard let textFieldView else { return }
+        
+        let buttonStack = createButtonStack()
+
+        stackView.addArrangedSubview(textFieldView)
+        stackView.addArrangedSubview(restrictionCount)
+        stackView.addArrangedSubview(table)
+        stackView.addArrangedSubview(emojiCollection?.emojiCollection ?? UICollectionView())
+        stackView.addArrangedSubview(colorCollection?.colorCollection ?? UICollectionView())
+        stackView.addArrangedSubview(buttonStack)
+        
+        restrictionCount.isHidden = true
     }
     
+    private func createButtonStack() -> UIStackView{
+        let buttonStack = UIStackView()
+        buttonStack.axis = .horizontal // Горизонтальное расположение
+        buttonStack.distribution = .fillEqually
+        buttonStack.alignment = .center // Выравнивание по центру (по вертикали)
+        buttonStack.spacing = 8 // Отступ между кнопками
+
+        buttonStack.addArrangedSubview(cancelButton)
+        buttonStack.addArrangedSubview(saveButton)
+        return buttonStack
+    }
+}
+
+// MARK: add collections
+
+extension CreateRegularTrackController {
+    
+    private func setupCollections() {
+        guard let emojiCollection, let colorCollection else { return }
+        
+        emojiCollection.configurateEmojiCollection()
+        colorCollection.configColorCollection()
+        
+        let emojiC = emojiCollection.emojiCollection
+        let colorC = colorCollection.colorCollection
+        
+        emojiC.isScrollEnabled = false
+        colorC.isScrollEnabled = false
+        
+        emojiC.translatesAutoresizingMaskIntoConstraints = false
+        colorC.translatesAutoresizingMaskIntoConstraints = false
+        
+        
+        // Дебаг-рамки (можно удалить позже)
+        //        emojiC.layer.borderWidth = 2
+        //        emojiC.layer.borderColor = UIColor.red.cgColor
+        //        colorC.layer.borderWidth = 2
+        //        colorC.layer.borderColor = UIColor.green.cgColor
+        
+        NSLayoutConstraint.activate([
+            emojiC.heightAnchor.constraint(equalToConstant: 210),
+            colorC.heightAnchor.constraint(equalToConstant: 210)
+        ])
+    }
+}
+
+// MARK: Setup TableView
+extension CreateRegularTrackController: UITableViewDataSource, UITableViewDelegate {
+    
+ 
     private func setupTable(){
-        view.addSubview(table)
         table.translatesAutoresizingMaskIntoConstraints = false
         
         table.separatorStyle = .singleLine // Включаем разделители
         table.separatorColor = .lightGray // Цвет как у системы
         table.separatorInset = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16) // Стандартные отступы
+        table.isScrollEnabled = false
         
-        //Временно:
-        //                        table.layer.borderWidth = 2
-        //                        table.layer.borderColor = UIColor.red.cgColor
+//        //Временно:
+//        table.layer.borderWidth = 2
+//        table.layer.borderColor = UIColor.purple.cgColor
         
         // Убираем верхний разделитель таблицы
         table.tableHeaderView = UIView(frame: CGRect(x: 0, y: 0, width: 0, height: 1))
@@ -234,54 +298,23 @@ final class CreateRegularTrackController: UIViewController {
         table.dataSource = self
         table.delegate = self
         table.register(RegularTrackCell.self, forCellReuseIdentifier: "RegularTrackCell")
+    
+        table.estimatedRowHeight = 75  // Примерная высота (для оптимизации)
+        table.rowHeight = UITableView.automaticDimension  // Автоматический расчёт
+        
+        // Добавляем констрейнт по высоте
+        tableHeightConstraint = table.heightAnchor.constraint(equalToConstant: 1)
+        tableHeightConstraint?.isActive = true
+
     }
     
-    private func constraintForViews(){
-        
-        NSLayoutConstraint.activate([
-            nameOfTrack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
-            nameOfTrack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-            nameOfTrack.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 38),
-            nameOfTrack.heightAnchor.constraint(equalToConstant: 75),
-            
-            cleanTextButton.centerYAnchor.constraint(equalTo: nameOfTrack.centerYAnchor),
-            cleanTextButton.topAnchor.constraint(equalTo: nameOfTrack.topAnchor, constant: 29),
-            cleanTextButton.trailingAnchor.constraint(equalTo: nameOfTrack.trailingAnchor, constant: -12),
-            
-            placeholderForTextView.leadingAnchor.constraint(equalTo: nameOfTrack.leadingAnchor, constant: 20),
-            placeholderForTextView.topAnchor.constraint(equalTo: nameOfTrack.topAnchor, constant: 27),
-            placeholderForTextView.bottomAnchor.constraint(equalTo: nameOfTrack.bottomAnchor, constant: -26),
-            
-            cancelButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            cancelButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
-            cancelButton.trailingAnchor.constraint(equalTo: saveButton.leadingAnchor, constant: -8),
-            cancelButton.heightAnchor.constraint(equalToConstant: 60),
-            
-            saveButton.leadingAnchor.constraint(equalTo: cancelButton.trailingAnchor, constant: 8),
-            saveButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
-            saveButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-            saveButton.heightAnchor.constraint(equalToConstant: 60),
-            saveButton.widthAnchor.constraint(equalTo: cancelButton.widthAnchor),
-            
-            table.leadingAnchor.constraint(equalTo: nameOfTrack.leadingAnchor),
-            table.trailingAnchor.constraint(equalTo: nameOfTrack.trailingAnchor),
-        ])
-        
-        let tableHeightConstraint = table.heightAnchor.constraint(greaterThanOrEqualToConstant: 170)
-        tableHeightConstraint.priority = .defaultLow
-        tableHeightConstraint.isActive = true
-
-       
-        let maxHeightConstraint = table.heightAnchor.constraint(lessThanOrEqualTo: view.heightAnchor, multiplier: 0.5)
-        maxHeightConstraint.isActive = true
-        self.topConstraint = table.topAnchor.constraint(equalTo: nameOfTrack.bottomAnchor, constant: 24)
-        self.topConstraint?.isActive = true
-        self.bottomConstraint?.isActive = true
+    private func updateTableHeight() {
+        table.layoutIfNeeded()
+        print("Высота контент сайз - ", table.contentSize.height)
+        tableHeightConstraint?.constant = table.contentSize.height
+        print("Высота контент сайз - ", table.contentSize.height)
     }
-}
 
-// MARK: Setup TableView
-extension CreateRegularTrackController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         dataBase.count
     }
@@ -321,69 +354,46 @@ extension CreateRegularTrackController: UITableViewDataSource, UITableViewDelega
     }
 }
 
-// MARK: UITextView Delegate
-extension CreateRegularTrackController: UITextViewDelegate {
-    
-    func textViewShouldBeginEditing(_ textView: UITextView) -> Bool {
-        placeholderForTextView.isHidden = true
-        return true
-    }
-    
-    func textViewDidChange(_ textView: UITextView) {
-        changeValue()
-    }
-    
-    func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
-        if text == "\n" {  // Если нажат Return
-            textView.resignFirstResponder()
-            cleanTextButton.isHidden = true
-            titleOfTrack = text
-            titleOfTrack = self.nameOfTrack.text
-            return false
+// MARK: TextFieldControllerProtocol
+extension CreateRegularTrackController: TextFieldControllerProtocol {
+    func updateTitle(title: String){
+        titleOfTrack = title
+        if !title.isEmpty {
+            saveButton.layer.backgroundColor = UIColor.blackDay.cgColor
+            saveButton.isEnabled = true
+        } else {
+            saveButton.layer.backgroundColor = UIColor.grey.cgColor
+            saveButton.isEnabled = false
+
         }
-        return true
+        print("Приняли тайтл - \(titleOfTrack)")
+    }
+    
+    func updateLayout(showLimit: Bool) {
+        guard let textFieldView else { return }
+        
+        restrictionCount.isHidden = !showLimit
+        UIView.animate(withDuration: 0.3) {
+            self.stackView.setCustomSpacing(showLimit ? 8 : 24, after: textFieldView)
+            self.view.layoutIfNeeded()
+        }
+    }
+    
+    private func setupKeyboard(){
+        let tapCloseKeyboard = UITapGestureRecognizer(target: self, action: #selector(closeKeyBoard))
+        tapCloseKeyboard.cancelsTouchesInView = false
+        view.addGestureRecognizer(tapCloseKeyboard)
+    }
+    
+    @objc private func closeKeyBoard(){
+        view.endEditing(true)  // Скрывает клавиатуру для всех полей
+        print("Метод скрытия сработал")
+        textFieldView?.updateTitleWhenCloseTheKeyboard()
     }
 }
 
-// MARK:
+// MARK: Business Logic
 extension CreateRegularTrackController {
-    
-    // метод ограничивающий количество символов на вввод
-    @objc private func changeValue(){
-        if let textCount = nameOfTrack.text?.count {
-            
-            if textCount == 0 && nameOfTrack.text.isEmpty{
-                placeholderForTextView.isHidden = false
-                cleanTextButton.isHidden = true
-                
-            } else if textCount > 0 {
-                print("Видна")
-                placeholderForTextView.isHidden = true
-                saveButton.backgroundColor = .blackDay
-                cleanTextButton.isHidden = false
-            }
-            
-            if textCount > 38 {
-                restrictionCount.isHidden = false
-                restrictionCount.textColor = .red
-                
-                topConstraint?.constant = 62
-                bottomConstraint?.constant = -380
-                
-                UIView.animate(withDuration: 0.1) {
-                    self.view.layoutIfNeeded()
-                }
-                
-            } else {
-                restrictionCount.isHidden = true
-                topConstraint?.constant = 24
-                bottomConstraint?.constant = -495
-                UIView.animate(withDuration: 0.1) {
-                    self.view.layoutIfNeeded()
-                }
-            }
-        }
-    }
     
     // Метод обрабатывает значение с днями недели от ChooseDayController
     @objc private func updateRepeatLabelDay(_ notification: Notification){
@@ -409,6 +419,8 @@ extension CreateRegularTrackController {
             updateTimetableCell()
             // Обновляем ячейку - "Категория"
             updateCategoriesCell(categoryArray: array)
+            // Обновляем размер таблицы
+            updateTableHeight()
         }
     }
     
@@ -464,16 +476,11 @@ extension CreateRegularTrackController {
             customCell.configurateWith(newData: categoryArray, updateWeekDays: false)
         }
     }
-    
 }
 
-
-extension CreateRegularTrackController: UITextFieldDelegate{
-    //         //Метод закрывает клавиатуру
-    //            func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-    //                textField.resignFirstResponder()
-    //                return true
-    //            }
-    //
+extension NSLayoutConstraint {
+    func withPriority(_ priority: UILayoutPriority) -> NSLayoutConstraint {
+        self.priority = priority
+        return self
+    }
 }
-

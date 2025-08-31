@@ -6,6 +6,11 @@ final class TrackersViewController: UIViewController {
     
     weak var track: TrackCollectionProtocol? // ссылка на коллекцию
     
+    private let trackerRecordStore = TrackerRecordStore()
+    private let storeReader = TrackerStoreReader()
+    lazy var trackerWriterStore = TrackerStoreWriter(recordStore: self.trackerRecordStore)
+    private lazy var trackerCategoryStore = TrackerCategoryStore(trackerWriter: trackerWriterStore, trackerRider: storeReader)
+    
     private lazy var searchBar = {
         let searchBar = UISearchBar()
         add(newView: searchBar)
@@ -48,8 +53,7 @@ final class TrackersViewController: UIViewController {
     private  var currentDate: Date = Date()
     private var categories = [TrackerCategory]() // массив со всеми треками
     private var trackByDayDictionary: [WeekDays: Set<UInt>] = [WeekDays.Monday: Set<UInt>(), WeekDays.Tuesday: Set<UInt>(), WeekDays.Wednesday: Set<UInt>(), WeekDays.Thursday: Set<UInt>(), WeekDays.Friday: Set<UInt>(), WeekDays.Saturday: Set<UInt>(), WeekDays.Sunday: Set<UInt>()] // Словраь с id привязанный к дням недели
-    private var completedTrackers = [TrackerRecord]() //  массив с выполнеными треками
-    
+    private var completedTrackers = [TrackerRecord]() // массив с выполнеными треками
     
     // MARK: Lifecycle
     override func viewDidLoad() {
@@ -60,7 +64,8 @@ final class TrackersViewController: UIViewController {
         setupConstraint()
         setUpNavigationPlusButton()
         setupDatePicker()
-        setupStartView()
+        setupCollection(dataBase: categories) // ПЕРЕМЕЩЕНА ИЗ StartView
+        actionWhitDatePicker(datePiker)
     }
     
     init(track: TrackCollectionProtocol) {
@@ -75,7 +80,7 @@ final class TrackersViewController: UIViewController {
     // MARK: Setup Views
     private func setupCollection(dataBase: [TrackerCategory]){
         guard let track else { return }
-        track.configure(collection: dataBase, controllerForCollection: self, completedTrackers: completedTrackers)
+        track.configure(controllerForCollection: self)
         
         add(newView: track.collection)
         
@@ -186,38 +191,21 @@ final class TrackersViewController: UIViewController {
 // MARK: Methods with movement logic
 extension TrackersViewController {
     
-    // Метод вызывается при добавлении нового трека и при первом запуске
-    private func setupStartView(){
-        
-        if !categories.isEmpty{
-            print("Категория заполнена")
-            let actualForTodayDataArray = chooseActualDataForPresent() // формируем актуальный масиив с треками на выбранную дату
-            makeCollectionInvisible(ifEmpty: actualForTodayDataArray) // скрываем коллекцию в случае если на ыывбранный день нету трека
-            
-            setupCollection(dataBase: actualForTodayDataArray) // добавляем коллекцию если еще не добавлена
-            track?.reloadData(with: actualForTodayDataArray, and: completedTrackers, choseDate: currentDate) // перезагружаем данные с учетом всех обновленных данных
-            
-        } else { print("Категория не заполнена") }
-    }
-    
     // Метод срабатывает при изменении даты в датапикере
     @objc private func actionWhitDatePicker(_ sender: UIDatePicker){
         
-        currentDate = sender.date // меняем дату на выбранную
-        let weekday = Calendar.current.component(.weekday, from: currentDate)
+        let calendarCurrent = Calendar.current
+        let weekday = calendarCurrent.component(.weekday, from: sender.date)
+        let selectedFormattedDate = WeekDays(rawValue: weekday) // определяем номер дня недели
+        track?.currentDate = sender.date // задаем выбранную дату чтобы отключить активность кнопок
+        let actualCountOfTrackForDay = track?.updateForDay(selectedFormattedDate?.rawValue ?? 0 )
+        // определяем день недели для выбранной даты
         
-        guard let selectedFormattedDate = WeekDays(rawValue: weekday) else {
-            print("Ошибка: не удалось определить день недели")
-            return
-        }
-        
-        let filteredData = chooseActualDataForPresent()
-        makeCollectionInvisible(ifEmpty: filteredData)
-        track?.reloadData(with: filteredData, and: completedTrackers, choseDate: currentDate)
+        makeCollectionInvisible(count: actualCountOfTrackForDay ?? 0)
     }
-    
-    private func makeCollectionInvisible(ifEmpty: [TrackerCategory]){
-        if ifEmpty.isEmpty {
+    // Метод коллекции срабатывает если треков на выбранный день нет
+    private func makeCollectionInvisible(count: Int){
+        if count == 0 {
             track?.collection.layer.opacity = 0
         } else {
             track?.collection.layer.opacity = 1
@@ -225,114 +213,17 @@ extension TrackersViewController {
     }
 }
 
-// MARK: Methods create actual tracks on selected date
-extension TrackersViewController {
-    
-    // Метод формирует актуальный масcив с треками на выбраную дату
-    private func chooseActualDataForPresent() -> [TrackerCategory]{
-        
-        let calendarCurrent = Calendar.current
-        let weekday = calendarCurrent.component(.weekday, from: currentDate) // определяем день недели для выбранной даты
-        let selectedFormattedDate = WeekDays(rawValue: weekday) // определяем номер дня недели
-        
-        let actualArrayWithData = categories // копируем весь масив с данными
-        var newData = [TrackerCategory]()
-        
-        for actualTrackForDay in trackByDayDictionary { // Проходимся по словарю с индексами по дням
-            
-            if actualTrackForDay.key == selectedFormattedDate && !actualTrackForDay.value.isEmpty { // если сегодняшний день == ключу и множество не пустове
-                let setForActualDay = actualTrackForDay.value // множество с нужными ключами
-                
-                for array in actualArrayWithData { // Проходим по всем трекам и убираем лишние треки
-                    
-                    let totalCategory = array.trackerArray.filter { setForActualDay.contains($0.id) } // оставляем только те категории которые содержат нужный id
-                    if !totalCategory.isEmpty {
-                        newData.append(TrackerCategory(title: array.title, trackerArray: totalCategory)) // добавляем
-                    }
-                }
-            } else { continue } // иначе пропускаем
-        }
-        return newData // возвращаем отфильтрованный список для currentDate
-    }
-    
-    // Достаем из categories дни недели в которые повторяем треки и передаем в trackByDayDictionary
-    private func showTrackOnSelectedDate(selectedDate: WeekDays){
-        
-        var trackForShow = Set<UInt>() // Храним актуальные id для текущего дня
-        
-        categories.forEach { category in // Проходимся по категориям
-            for i in category.trackerArray { // Проходимся по массиву с терками внутри категории
-                
-                let arrayWithDaysOfWeek = i.timeTable.dayOfWeek
-                let id = i.id
-                
-                for selectDay in arrayWithDaysOfWeek { // Достаем дни для каждого id
-                    
-                    switch selectDay {
-                        
-                    case .Monday where (selectedDate.rawValue == 2):
-                        trackForShow.insert(id)
-                    case .Tuesday where (selectedDate.rawValue == 3):
-                        trackForShow.insert(id)
-                    case .Wednesday where (selectedDate.rawValue == 4):
-                        trackForShow.insert(id)
-                    case .Thursday where (selectedDate.rawValue == 5):
-                        trackForShow.insert(id)
-                    case .Friday where (selectedDate.rawValue == 6):
-                        trackForShow.insert(id)
-                    case .Saturday where (selectedDate.rawValue == 7):
-                        trackForShow.insert(id)
-                    case .Sunday where (selectedDate.rawValue == 1):
-                        trackForShow.insert(id)
-                    default :
-                        break
-                    }
-                }
-            }
-        }
-        
-        for (key, value) in trackByDayDictionary{ // добавляем id треков для выбранного дня
-            if key == selectedDate {
-                trackByDayDictionary[selectedDate] = trackForShow.union(value)
-            }
-        }
-    }
-}
-
+//  MARK: TrackersViewControllerProtocol
 extension TrackersViewController: TrackersViewControllerProtocol {
     
     // Метод принимает данные с формы через замыкание
     func updateCategoriesArray(new array: [TrackerCategory]) {
-        
-        let choseCategory = array[0]
-        
-        // Если категория есть добавляем новый трек туда
-        if let index = categories.firstIndex(where: {$0.title == choseCategory.title}){
-            
-            var addNewTrack = categories[index].trackerArray
-            addNewTrack.append(contentsOf: choseCategory.trackerArray)
-            
-            categories[index] = TrackerCategory(title: choseCategory.title,
-                                                trackerArray: addNewTrack)
-            print("Добавили треки в существующую категорию: \(choseCategory.title)")
-            
-            // Если нету создаем новую категорию с новым треком
-        } else {
-            categories.append(choseCategory)
-            print("Добавили новую категорию - \(choseCategory)")
-        }
-        
-        updateIndex() // обновляем индексы
-        setupStartView()
-    }
-    
-    // Обновляем массив с актуальными индексам
-    private func updateIndex(){
-        for i in 1..<9 {
-            let selectedFormattedDate = WeekDays(rawValue: i)
-            if let selectedFormattedDate{
-                showTrackOnSelectedDate(selectedDate: selectedFormattedDate)
-            }
+        do {
+            try trackerCategoryStore.addNewTrackerCategory(array) // добавляем новый трек в БД
+            try CoreDataManager.shared.context.save()
+            actionWhitDatePicker(datePiker)
+        } catch {
+            print("КРИТИЧЕСКАЯ ОШИБКА: \(error)")
         }
     }
 }
@@ -340,153 +231,14 @@ extension TrackersViewController: TrackersViewControllerProtocol {
 // MARK: TrackCollectionActionDelegate
 extension TrackersViewController: TrackCollectionActionDelegate {
     
-    enum ActionWithArray{
-        case remove
-        case add
-    }
-    
     // Метод вызываемый делегирующим объектом(коллекцией) реагирует на изменение состояния кнопки в ячейки
     func didCompleteTracker(_ trackerId: UInt) {
         
-        let todayDateArray = currentDate.formatted()
-        // Ищем в оригинальном массиве, где находится trackerId
-        guard let (sectionIndex, itemIndex) = findIndexPath(for: trackerId) else {
-            print("Ошибка: не нашли trackerId в categories")
-            return
-        }
+        let todayDateArray = datePiker.date.formatted().dataFormatter()
         
-        correctedTrackersArray(
-            actualDate: todayDateArray,
-            actualId: trackerId,
-            section: sectionIndex,
-            item: itemIndex
-        ) // изменяем счетчик в ячейке
+        CoreDataManager.shared.updateTimeTableForTrackWithId(id: Int(trackerId), actualDate: todayDateArray)
         
-        let filteredData = chooseActualDataForPresent()
-        
-        track?.reloadData(with: filteredData, and: completedTrackers, choseDate: currentDate)
-        
-    }
-    
-    // Метод определяет индексы для ячейки
-    private func findIndexPath(for trackerId: UInt) -> (Int, Int)? {
-        for (sectionIndex, category) in categories.enumerated() {
-            if let itemIndex = category.trackerArray.firstIndex(where: { $0.id == trackerId }) {
-                return (sectionIndex, itemIndex)
-            }
-        }
-        return nil
-    }
-    
-    // Метод определяет действие(+/-) в зависимости от наличия выбарнной даты
-    private func correctedTrackersArray(actualDate: String, actualId: UInt, section: Int , item: Int ){
-        
-        // Если элемент с таким id есть в выполненных треках и в нем есть выбранная дата, значит выбрано действие - "Трек не выполнен"
-        if completedTrackers.contains(where: { $0.id == actualId  && $0.trackCompletionDate.contains(where: {$0 == actualDate }) }){
-            
-            guard let index = completedTrackers.firstIndex(where: {$0.id == actualId}) else { return }
-            
-            // Понижаем каунтер для общей модели
-            correctedCategoriesCounter(section: section, item: item, action: ActionWithArray.remove)
-            
-            // Удаляем лишние даты или весь рекорд
-            removeDateInTrackerArray(actualDate: actualDate, actualId: actualId, indexElement: index)
-            
-            print("Текущий массив после удаления", completedTrackers)
-            
-            // Если id есть,а выбранной даты нету
-        } else if completedTrackers.contains(where: { $0.id == actualId  && $0.trackCompletionDate.contains(where: {$0 != actualDate }) }){
-            
-            guard let index = completedTrackers.firstIndex(where: {$0.id == actualId}) else { return }
-            
-            // Добавляем новые даты к уже существующему треку
-            addDateInTrackerArray(actualDate: actualDate, actualId: actualId, indexElement: index)
-            
-            // Повышаем каунтер для общей модели
-            correctedCategoriesCounter(section: section, item: item, action: ActionWithArray.add)
-            
-            print("Текущий массив после добавления еще одной датой ", completedTrackers)
-        }
-        
-        // Если id нету добавляем
-        else {
-            completedTrackers.append(TrackerRecord(id: actualId, trackCompletionDate: [actualDate]))
-            // MARK: ДОБАВИТЬ correctedCategoriesCounter СЮДА
-            correctedCategoriesCounter(section: section, item: item, action: ActionWithArray.add)
-            print("Добавлен новый элемент в массив", completedTrackers)
-            print("Это категориес после добавления нового элемента на дургой день недели обратить внимание на count - \(categories)")
-        }
-    }
-    
-    // Метод +/- каунтер в завиисимсоти от выбранного action
-    private func correctedCategoriesCounter(section: Int, item: Int, action: ActionWithArray){
-        // Копируем текущие данные
-        let newCategories = categories
-        let trackerToUpdate = newCategories[section].trackerArray[item]
-        let timeTableToUpdate = trackerToUpdate.timeTable
-        
-        // Выбираем прибавлять или уменьшать каунтер
-        let chooseAction = action == ActionWithArray.add ? timeTableToUpdate.dayCount + 1 : timeTableToUpdate.dayCount - 1
-        
-        // Создаем новый трек с обновленным значением dayCount
-        let newTrack = Tracker(id: trackerToUpdate.id,
-                               name: trackerToUpdate.name,
-                               color: trackerToUpdate.color,
-                               emoji: trackerToUpdate.emoji,
-                               timeTable: TimeTabel(dayCount: chooseAction,
-                                                    dayOfWeek: trackerToUpdate.timeTable.dayOfWeek))
-        
-        // Создаем новый массив треков и заменяем старый
-        var newTrackers = newCategories[section].trackerArray
-        newTrackers[item] = newTrack
-        
-        // Создаем новую категорию
-        let newCategory = TrackerCategory(title: newCategories[section].title, trackerArray: newTrackers)
-        
-        // Обновляем наш массив с данными
-        var actualCategories = categories
-        actualCategories[section] = newCategory
-        categories = actualCategories
-    }
-    
-    // Метод удаляет существующую дату из рекорда и в случае если это последняя дата удаляет весь рекорд для трека
-    private func removeDateInTrackerArray(actualDate: String, actualId: UInt, indexElement: Array<TrackerRecord>.Index){
-        
-        // Копируем старый массив и удаляем его старую дату
-        var actualRemoveDate = completedTrackers[indexElement].trackCompletionDate
-        actualRemoveDate.removeAll { $0 == actualDate
-        }
-        
-        // Создаем новый рекорд
-        let newRecord = TrackerRecord(id: actualId, trackCompletionDate: actualRemoveDate)
-        
-        // Обновляем
-        var newArrayCompletedTrackers = completedTrackers
-        newArrayCompletedTrackers[indexElement] = newRecord
-        completedTrackers = newArrayCompletedTrackers
-        
-        // Проверяем необхтодимость полного удлаения
-        if completedTrackers[indexElement].trackCompletionDate.isEmpty {
-            completedTrackers.remove(at: indexElement)
-        } else {
-            print("Текущий массив не пустой, количество элементов - \(completedTrackers.count)")
-        }
-    }
-    
-    // Метод добавляет completedTrackers
-    private func addDateInTrackerArray(actualDate: String, actualId: UInt, indexElement: Array<TrackerRecord>.Index){
-        
-        // Копируем старый массив и обновляем его новой датой
-        var actualDates = completedTrackers[indexElement].trackCompletionDate
-        actualDates.append(actualDate)
-        
-        // Создаем новый рекорд
-        let newRecord = TrackerRecord(id: actualId, trackCompletionDate: actualDates)
-        
-        // Обновляем
-        var newArrayCompletedTrackers = completedTrackers
-        newArrayCompletedTrackers[indexElement] = newRecord
-        completedTrackers = newArrayCompletedTrackers
+        track?.reloadData()
     }
 }
 
