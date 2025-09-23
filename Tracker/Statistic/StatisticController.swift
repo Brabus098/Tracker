@@ -8,5 +8,4 @@ final class StatisticController: UIViewController {
         super.viewDidLoad()
         view.backgroundColor = .white
     }
-    
 }

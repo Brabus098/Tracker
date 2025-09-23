@@ -1,4 +1,5 @@
 //  Extension+SearchBar.swift
+
 import UIKit
 
 extension UISearchBar {

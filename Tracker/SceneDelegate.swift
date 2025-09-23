@@ -11,8 +11,12 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
   
         guard let windowScene = (scene as? UIWindowScene) else { return }
         window = UIWindow(windowScene: windowScene)
-
-        window?.rootViewController = OnboardingViewController() /*rootController*/
+   
+        var userDefaults = EnterSettingsUserDefaults()
+        var startController = OnboardingViewController()
+        startController.enterStatusDelegate = userDefaults
+        window?.rootViewController = startController
+        /*rootController*/
         window?.makeKeyAndVisible()
     }
 

@@ -3,7 +3,7 @@
 import UIKit
 
 final class TabBarController: UITabBarController {
-
+    
     let storeReader = TrackerStoreReader()
     let recordStore = TrackerRecordStore()
     lazy var trackCollection = TrackCollection(trackerStore: storeReader, recordStore: recordStore)
@@ -14,7 +14,10 @@ final class TabBarController: UITabBarController {
     }
     
     private func setupTabs(){
-        let trackController = TrackersViewController(track: trackCollection)
+        
+        let model = RegularTrackModel()
+        let viewModel = TrackViewModel(for: model)
+        let trackController = TrackersViewController(track: trackCollection, viewModel: viewModel)
         let trackNavigationController = PlusNavigationController(rootViewController: trackController)
         
         trackController.tabBarItem = UITabBarItem(title: "Трекеры",
