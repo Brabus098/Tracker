@@ -28,7 +28,7 @@ final class OnboardingViewController: UIPageViewController {
     }
     
     func checkFirstEnterStatus(){
-        if let status = enterStatusDelegate?.enterStatus{
+        if let status = enterStatusDelegate?.enterStatus, status {
             self.switchToTabBarController()
         }
     }
