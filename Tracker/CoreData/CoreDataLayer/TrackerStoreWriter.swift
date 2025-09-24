@@ -1,10 +1,5 @@
 import CoreData
 
-protocol TrackerWriterProtocol: AnyObject {
-    func createTracker(_ tracker: Tracker, category: TrackerCategoryCoreData) throws -> TrackerCoreData
-}
-
-// класс отвечает за создание трека
 final class TrackerStoreWriter: TrackerWriterProtocol {
     
     private let context: NSManagedObjectContext

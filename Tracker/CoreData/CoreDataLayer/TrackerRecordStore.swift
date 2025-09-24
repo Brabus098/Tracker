@@ -26,7 +26,6 @@ final class TrackerRecordStore: TrackerRecordStoreProtocol { // класс от�
             newCompletion.date = completionDate
             newCompletion.record = record
             
-            // 3. Сохраняем контекст
             try context.save()
         }
     }

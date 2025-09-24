@@ -5,6 +5,7 @@ import CoreData
 
 final class TrackerStoreReader: NSObject {
     weak var delegate: TrackerStoreDelegate?
+    weak var filterDelegate: FilterDelegate?
     
     private let context: NSManagedObjectContext
     private var frc: NSFetchedResultsController<TrackerCoreData>!
@@ -17,7 +18,7 @@ final class TrackerStoreReader: NSObject {
     
     // Метод достает трек из БД для заполнения коллекции
     func tracker(at indexPath: IndexPath) -> Tracker? {
-        guard let object = frc.object(at: indexPath) as? TrackerCoreData else { return nil }
+        let object = frc.object(at: indexPath)
         return Tracker(
             id: UInt(object.id),
             name: object.name ?? "",
@@ -30,6 +31,61 @@ final class TrackerStoreReader: NSObject {
     // Метод проверяет вхождение даты в рекорд
     func checkContainsDate(id: Int16, date: String) -> Bool {
         CoreDataManager.shared.checkContainsDateFor(id: id, actualDate: date)
+    }
+    
+    // Метод выгружает из БД все треки
+    func loadTrackers() -> [TrackerCategory] {
+        var categoryArray = [TrackerCategory]()
+        
+        do {
+            try frc.performFetch()
+            guard let fetchedObjects = frc.fetchedObjects else {
+                print("[TrackerStoreReader]: Не удалось получить объекты из fetchedResultsController")
+                return categoryArray
+            }
+            
+            var categoriesDict = [String: [Tracker]]()
+            
+            for trackerCoreData in fetchedObjects {
+                guard let categoryTitle = trackerCoreData.category?.title else {
+                    print("[TrackerStoreReader]: Трекер без категории: \(trackerCoreData.name ?? "no name")")
+                    continue
+                }
+                
+                let tracker = Tracker(
+                    id: UInt(trackerCoreData.id),
+                    name: trackerCoreData.name ?? "",
+                    color: trackerCoreData.color ?? "",
+                    emoji: trackerCoreData.emoji ?? "",
+                    timeTable: convertTimeTable(CoreDatatype: trackerCoreData.timeTable ?? TimeTableCoreData())
+                )
+                
+                if categoriesDict[categoryTitle] == nil {
+                    categoriesDict[categoryTitle] = []
+                }
+                categoriesDict[categoryTitle]?.append(tracker)
+            }
+            
+            for (title, trackers) in categoriesDict {
+                categoryArray.append(TrackerCategory(title: title, trackerArray: trackers))
+            }
+            
+        } catch { print("[TrackerStoreReader]: Ошибка при загрузке трекеров: \(error)") }
+        return categoryArray
+    }
+    
+    // Метод возвращает расписание для трека
+    func convertTimeTable(CoreDatatype: TimeTableCoreData) -> TimeTabel{
+        let count = CoreDatatype.dayCount
+        var dayArray = [WeekDay]()
+        if let weekDayArray = CoreDatatype.weekDays?.allObjects as? [WeekDayCoreData]{
+            for day in weekDayArray{
+                if let day = day.dayName, let weekDay = WeekDay(rawValue: day) {
+                    dayArray.append(weekDay)
+                }
+            }
+        }
+        return TimeTabel(dayCount: Int(count), dayOfWeek: dayArray)
     }
 }
 
@@ -55,7 +111,7 @@ extension TrackerStoreReader: NSFetchedResultsControllerDelegate {
         do {
             try frc.performFetch()
         } catch {
-            print("Ошибка FRC: \(error)")
+            print("[TrackerStoreReader]: Ошибка FRC: \(error)")
         }
     }
     
@@ -66,7 +122,6 @@ extension TrackerStoreReader: NSFetchedResultsControllerDelegate {
 }
 
 // MARK: update collection
-
 extension TrackerStoreReader: TrackerReaderProtocol{
     
     func numberOfSections() -> Int {
@@ -78,97 +133,71 @@ extension TrackerStoreReader: TrackerReaderProtocol{
     }
     
     func titleForSection(_ section: Int) -> String {
-        frc.sections?[section].name ?? ""
+        
+        guard let sectionInfo = frc.sections?[section] else { return "" }
+        let sectionKey = sectionInfo.name  // Например, "0_Закрепленные" или "1_Работа"
+        
+        // Разделяем по "_" и берём последнюю часть (реальное название)
+        let components = sectionKey.components(separatedBy: "_")
+        let realTitle = components.last ?? ""
+        
+        return realTitle
     }
 }
 
 // MARK: Filters methods for tracks
 extension TrackerStoreReader {
     
-    // Метод помогает фильтровать треки во дням недели
-    func updateFilter(for day: Int) -> Int {
-        frc.fetchRequest.predicate = NSPredicate(format: "ANY timeTable.weekDays.order == %d", day)
+    // Метод для обновления fetchedResultsController c учетом фильтра по дням
+    func updateFilterForDay(_ day: Int) -> Int{
+        
+        let newPredicate = NSPredicate(format: "ANY timeTable.weekDays.order == %d", day)
+        frc.fetchRequest.predicate = newPredicate
+        delegate?.didUpdateData()
+        
         do {
             try frc.performFetch()
             return frc.fetchedObjects?.count ?? 0
         } catch {
-            print("Ошибка обновления фильтра: \(error)")
-            return 0
+            print("[TrackerStoreReader]: Ошибка обновления фильтра по дням: \(error)")
         }
+        return 0
     }
     
-    // Метод для обновления fetchedResultsController c учетом фильтра по дням
-    func updateFilterForDay(_ day: Int) -> Int{
-        // Задаем новый фильтр
-        let newPredicate = NSPredicate(format: "ANY timeTable.weekDays.order == %d", day)
+    func findText(element: String) -> Int? {
+        
+        let tackers = loadTrackers()
+        var newArray = [Tracker]()
+        
+        for i in tackers { newArray += i.trackerArray }
+        
+        for i in newArray {
+            
+            if let first = i.name.first, first == element.first {
+                finFilter(trackName: String(first))
+            }
+            //TODO: Дописать условия про половину слова
+            
+            if i.name == element { return finFilter(trackName: i.name) }
+        }
+        return nil
+    }
+    
+    private func finFilter(trackName: String) -> Int{
+        
+        let newPredicate = NSPredicate(format: "name CONTAINS[cd] %@", trackName)
         frc.fetchRequest.predicate = newPredicate
         
         do {
             try frc.performFetch()
+            DispatchQueue.main.async {
+                self.delegate?.didUpdateData()
+            }
+            
             return frc.fetchedObjects?.count ?? 0
         } catch {
-            print("Ошибка обновления фильтра: \(error)")
+            print("[TrackerStoreReader]: Ошибка обновления фильтра: \(error)")
         }
         return 0
-    }
-}
-
-extension TrackerStoreReader {
-    
-    // метод выгружает из БД все треки
-    func loadTrackers() -> [TrackerCategory] {
-        var categoryArray = [TrackerCategory]()
-        
-        do {
-            try frc.performFetch()
-            guard let fetchedObjects = frc.fetchedObjects else {
-                print("Не удалось получить объекты из fetchedResultsController")
-                return categoryArray
-            }
-            
-            var categoriesDict = [String: [Tracker]]()
-            
-            for trackerCoreData in fetchedObjects {
-                guard let categoryTitle = trackerCoreData.category?.title else {
-                    print("Трекер без категории: \(trackerCoreData.name ?? "no name")")
-                    continue
-                }
-                
-                let tracker = Tracker(
-                    id: UInt(trackerCoreData.id),
-                    name: trackerCoreData.name ?? "",
-                    color: trackerCoreData.color ?? "",
-                    emoji: trackerCoreData.emoji ?? "",
-                    timeTable: convertTimeTable(CoreDatatype: trackerCoreData.timeTable ?? TimeTableCoreData())
-                )
-                
-                if categoriesDict[categoryTitle] == nil {
-                    categoriesDict[categoryTitle] = []
-                }
-                categoriesDict[categoryTitle]?.append(tracker)
-            }
-            
-            for (title, trackers) in categoriesDict {
-                categoryArray.append(TrackerCategory(title: title, trackerArray: trackers))
-            }
-            
-        } catch {
-            print("Ошибка при загрузке трекеров: \(error)")
-        }
-        return categoryArray
-    }
-    
-    // метод возвращает расписание для трека
-    func convertTimeTable(CoreDatatype: TimeTableCoreData) -> TimeTabel{
-        let count = CoreDatatype.dayCount
-        var dayArray = [WeekDay]()
-        if let weekDayArray = CoreDatatype.weekDays?.allObjects as? [WeekDayCoreData]{
-            for day in weekDayArray{
-                if let day = day.dayName, let weekDay = WeekDay(rawValue: day) {
-                    dayArray.append(weekDay)
-                }
-            }
-        }
-        return TimeTabel(dayCount: Int(count), dayOfWeek: dayArray)
     }
 }

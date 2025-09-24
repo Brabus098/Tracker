@@ -9,6 +9,8 @@
         <relationship name="weekDays" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="WeekDayCoreData" inverseName="timetable" inverseEntity="WeekDayCoreData"/>
     </entity>
     <entity name="TrackerCategoryCoreData" representedClassName="TrackerCategoryCoreData" syncable="YES" codeGenerationType="class">
+        <attribute name="fixCategory" optional="YES" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="oldTitle" optional="YES" attributeType="String"/>
         <attribute name="title" attributeType="String"/>
         <relationship name="tracker" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="TrackerCoreData" inverseName="category" inverseEntity="TrackerCoreData"/>
     </entity>

@@ -12,7 +12,6 @@ protocol TrackerReaderProtocol: AnyObject {
     func numberOfItems(in section: Int) -> Int
     func tracker(at indexPath: IndexPath) -> Tracker?
     func titleForSection(_ section: Int) -> String
-    func updateFilter(for day: Int) -> Int
     func checkContainsDate(id: Int16, date: String) -> Bool
     func loadTrackers() -> [TrackerCategory]
 }

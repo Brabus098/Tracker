@@ -8,6 +8,7 @@ final class UniversalOnBoardController: UIViewController {
     private let backImageName: String
     private let mainLabelTitle: String
     private let currentPageOfPageControl: Int
+    private let userDefaultsDelegate: EnterSettingsUserDefaults
     
     private lazy var backGroundImage: UIImageView = {
         let imageView = UIImageView()
@@ -27,8 +28,10 @@ final class UniversalOnBoardController: UIViewController {
         button.titleLabel?.font = UIFont(name: "SFPro-Medium", size: 16)
         button.translatesAutoresizingMaskIntoConstraints = false
         
-        button.addAction(UIAction(handler: { _ in
-            self.switchToTabBarController()        }), for: .touchUpInside)
+        button.addAction(UIAction(handler: { [weak self] _ in
+            self?.userDefaultsDelegate.enterStatus = true
+            self?.switchToTabBarController()
+        }), for: .touchUpInside)
         
         return button
     }()
@@ -56,10 +59,11 @@ final class UniversalOnBoardController: UIViewController {
         return control
     }()
     
-    init(backImageName: String, mainLabelTitle: String, currentPageOfPageControl: Int) {
+    init(backImageName: String, mainLabelTitle: String, currentPageOfPageControl: Int, userDefaultsDelegate: EnterSettingsUserDefaults) {
         self.backImageName = backImageName
         self.mainLabelTitle = mainLabelTitle
         self.currentPageOfPageControl = currentPageOfPageControl
+        self.userDefaultsDelegate = userDefaultsDelegate
         
         super.init(nibName: nil, bundle: nil)
     }
@@ -105,10 +109,7 @@ final class UniversalOnBoardController: UIViewController {
             assertionFailure("Invalid window configuration")
             return
         }
-        
         let rootController = TabBarController()
-
         window.rootViewController = rootController
     }
 }
-// TODO: Сохранить состояние изменненого рутового контроллера можно либо загрузь в кор дату либо юзердефолтс
