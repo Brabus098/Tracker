@@ -65,10 +65,10 @@ extension MenuView: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         switch tableDataBaseActions[indexPath.row] {
             
-        case "Редактировать" : delegate?.choose(action: .edit, chooseTitle: chooseCategoryTitle)
-        case "Удалить": delegate?.choose(action: .delete, chooseTitle: chooseCategoryTitle)
-        case "Закрепить": delegate?.choose(action: .fix, chooseTitle: chooseCategoryTitle)
-        case "Открепить": delegate?.choose(action: .unFix, chooseTitle: chooseCategoryTitle)
+        case "Редактировать" , "Edit": delegate?.choose(action: .edit, chooseTitle: chooseCategoryTitle)
+        case "Удалить", "Delete": delegate?.choose(action: .delete, chooseTitle: chooseCategoryTitle)
+        case "Закрепить", "Pin": delegate?.choose(action: .fix, chooseTitle: chooseCategoryTitle)
+        case "Открепить", "Unpin": delegate?.choose(action: .unFix, chooseTitle: chooseCategoryTitle)
             
         default:
             print("[MenuView]: рандомное значение в меню!")

@@ -22,7 +22,7 @@ final class TrackersViewController: UIViewController {
         let searchBar = UISearchBar()
         add(newView: searchBar)
         
-        searchBar.placeholder = "Поиск"
+        searchBar.placeholder = String(localized: "Search")
         searchBar.removeSystemPadding()
         searchBar.searchTextField.font = UIFont(name: "SFPro-Regular", size: 17)
         searchBar.layer.borderWidth = 0
@@ -35,7 +35,7 @@ final class TrackersViewController: UIViewController {
         let label = UILabel()
         add(newView: label)
         
-        label.text = "Что будем отслеживать?"
+        label.text = NSLocalizedString("What are we going to track?", comment: "")
         label.textAlignment = .center
         label.font = UIFont(name: "SFPro-Medium", size: 12)
         
@@ -44,7 +44,7 @@ final class TrackersViewController: UIViewController {
     
     private lazy var mainTrackLabel = {
         let label = UILabel()
-        label.text = "Трекеры"
+        label.text = String(localized: "Trackers")
         label.textAlignment = .left
         label.font = UIFont(name: "SFPro-Bold", size: 34)
         add(newView: label)
@@ -366,9 +366,10 @@ extension TrackersViewController {
         var textButtonArray = [String]()
         
         if categoryTitle != "Закрепленные" {
-            textButtonArray = ["Закрепить", "Редактировать", "Удалить"]
+            textButtonArray = [ String(localized: "Pin"), String(localized:"Edit"), String(localized:"Delete") ]
+           
         } else {
-            textButtonArray = ["Открепить", "Редактировать", "Удалить"]
+            textButtonArray = [ String(localized: "Unpin"), String(localized:"Edit"), String(localized:"Delete")]
         }
         
         let menu = MenuView(tableDataBaseActions: textButtonArray,

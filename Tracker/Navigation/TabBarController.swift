@@ -20,12 +20,12 @@ final class TabBarController: UITabBarController {
         let trackController = TrackersViewController(track: trackCollection, viewModel: viewModel)
         let trackNavigationController = PlusNavigationController(rootViewController: trackController)
         
-        trackController.tabBarItem = UITabBarItem(title: "Трекеры",
+        trackController.tabBarItem = UITabBarItem(title: String(localized: "Trackers"),
                                                   image: UIImage(named: "tracTabBarLogo"),
                                                   tag: 0)
         
         let statisticController = StatisticController()
-        statisticController.tabBarItem = UITabBarItem(title: "Статистика",
+        statisticController.tabBarItem = UITabBarItem(title: String(localized: "Statistics"),
                                                       image: UIImage(named: "statisticTabBarLogo"),
                                                       tag: 1)
         
