@@ -30,7 +30,7 @@ final class AlpabetTests: XCTestCase {
             selectedImage: UIImage(named: "statisticTabBarLogo"))
         
         let tabBarController = UITabBarController()
-        tabBarController.setViewControllers([statisticController, trackNavigationController], animated: true)
+        tabBarController.setViewControllers([trackNavigationController, statisticController], animated: true)
         
         tabBarController.additionalSafeAreaInsets = UIEdgeInsets(top: 30, left: 0, bottom: 30, right: 0)
         
