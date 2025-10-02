@@ -51,9 +51,7 @@ final class CollectionViewCell: UICollectionViewCell {
         addSubItem(view: emojiLabel)
         
         countSuccessLabel.text = "0 дней" // Количество выполненных дней
-        
         plusDayButton.backgroundColor = .mainViewBack
-        backView.backgroundColor = .purple
     }
     
     private func setupButton(){
@@ -89,6 +87,7 @@ final class CollectionViewCell: UICollectionViewCell {
     
     private func setupEmojiBackground(){
         addSubItem(view: emojiBackColor)
+        
         emojiBackColor.backgroundColor = .emogiBack
         addLayers(for: emojiBackColor, layer: 27 / 2)
     }

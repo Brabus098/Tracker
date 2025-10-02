@@ -1,9 +1,5 @@
 //  TrackersViewController.swift
 
-protocol ActionFilterDelegate: AnyObject {
-    func filterDidUpdate()
-}
-
 import UIKit
 
 final class TrackersViewController: UIViewController {
@@ -81,9 +77,19 @@ final class TrackersViewController: UIViewController {
         return label
     }()
     
+    private lazy var labelForDataPiker = {
+        let label = UILabel()
+        label.text = datePiker.date.formatted().dataFormatter()
+        label.textColor = .black
+        label.font =  UIFont(name: "SFPro-Regular", size: 17)
+        
+        return label
+    }()
+    
     private let noTrackImageView = UIImageView()
     private let datePiker = UIDatePicker()
-    private  var currentDate: Date = Date()
+    private var currentDate: Date = Date()
+    private let colors = Colors()
     
     // MARK: Lifecycle
     override func viewDidLoad() {
@@ -147,9 +153,8 @@ final class TrackersViewController: UIViewController {
     private func setupDatePicker(){
         datePiker.datePickerMode = .date
         datePiker.preferredDatePickerStyle = .compact
+        datePiker.layer.cornerRadius = 16
         datePiker.locale = Locale(identifier: "ru_RU")
-        
-        setupDateFor(piker: datePiker)
         
         datePiker.addTarget(self, action: #selector(actionWhitDatePicker(_:)), for: .valueChanged)
         addToNavBar(piker: datePiker)
@@ -165,16 +170,41 @@ final class TrackersViewController: UIViewController {
         datePiker.maximumDate = maxDate
     }
     
-    private func addToNavBar(piker: UIDatePicker){
+    private func addToNavBar(piker: UIDatePicker) {
         guard let navigationBar = navigationController?.navigationBar else { return }
         
+        let container = UIView()
+        container.backgroundColor = .dataPikerBack
+        container.layer.cornerRadius = 8
+        
+        navigationBar.addSubview(container)
+        navigationBar.addSubview(labelForDataPiker)
         navigationBar.addSubview(piker)
-        navigationBar.barTintColor = .black
+        
+        labelForDataPiker.layer.zPosition = 1000
+        container.layer.zPosition = 1
+        piker.layer.zPosition = 0
+        
+        piker.alpha = 0.011
+        piker.isUserInteractionEnabled = true
+        
+        labelForDataPiker.translatesAutoresizingMaskIntoConstraints = false
         piker.translatesAutoresizingMaskIntoConstraints = false
+        container.translatesAutoresizingMaskIntoConstraints = false
         
         NSLayoutConstraint.activate([
-            piker.rightAnchor.constraint(equalTo: navigationBar.rightAnchor, constant: -16),
-            piker.centerYAnchor.constraint(equalTo: navigationBar.centerYAnchor)
+            container.trailingAnchor.constraint(equalTo: navigationBar.trailingAnchor, constant: -16),
+            container.centerYAnchor.constraint(equalTo: navigationBar.centerYAnchor),
+            container.heightAnchor.constraint(equalToConstant: 34),
+            container.widthAnchor.constraint(equalToConstant: 87),
+            piker.heightAnchor.constraint(equalToConstant: 34),
+            piker.widthAnchor.constraint(equalToConstant: 87),
+            
+            piker.trailingAnchor.constraint(equalTo: navigationBar.trailingAnchor, constant: -16),
+            piker.centerYAnchor.constraint(equalTo: navigationBar.centerYAnchor),
+            
+            labelForDataPiker.centerYAnchor.constraint(equalTo: container.centerYAnchor),
+            labelForDataPiker.centerXAnchor.constraint(equalTo: container.centerXAnchor)
         ])
     }
     
@@ -268,6 +298,8 @@ extension TrackersViewController {
     // Метод срабатывает при изменении даты в датапикере
     @objc private func actionWhitDatePicker(_ sender: UIDatePicker){
         
+        labelForDataPiker.text = sender.date.toShortFormat()
+        
         let calendarCurrent = Calendar.current
         let weekday = calendarCurrent.component(.weekday, from: sender.date)
         let selectedFormattedDate = WeekDays(rawValue: weekday) // определяем номер дня недели
@@ -306,8 +338,8 @@ extension TrackersViewController: TrackCollectionActionDelegate {
         track?.reloadDataInCollection()
     }
     
-    func changeStateCollection(status: Bool) { // MARK: не трогать не играет роли
-        print("Сработала changeStateCollection")
+    func changeStateCollection(status: Bool) {
+        
         if status {
             track?.collection.isHidden = false
             changeImage(status: false)
@@ -320,20 +352,17 @@ extension TrackersViewController: TrackCollectionActionDelegate {
     // Метод action delegate
     func showNotFoundImage(status: Bool) {
         
-        print("Сработал метод action делегата")
         if status {
-            print("Скрываем коллекцию нету значений")
             //makeCollectionInvisible(count: 0)
             changeImage(status: true)
         } else {
-            print("НЕСКРЫВАЕМ коллекцию нету значений")
             //makeCollectionInvisible(count: 1)
             changeImage(status: false)
         }
     }
     
     private func changeImage(status: Bool) {
-
+        
         if status {
             noTrackImageView.image = UIImage(named: "emojiMonocol")
             noTrackImageView.layer.zPosition = 10
@@ -347,7 +376,7 @@ extension TrackersViewController: TrackCollectionActionDelegate {
     
     // Метод коллекции срабатывает если треков на выбранный день нет
     private func makeCollectionInvisible(count: Int){
-                
+        
         if count == 0 {
             track?.collection.layer.opacity = 0
             changeImage(status: false)
