@@ -8,22 +8,24 @@ import Testing
 final class AlpabetTests: XCTestCase {
     
     func testViewController() {
+        setupTabBarAppearanceForTests()
+        
         let model = RegularTrackModel()
         let storeReader = TrackerStoreReader()
         let recordStore = TrackerRecordStore()
         lazy var trackCollection = TrackCollection(trackerStore: storeReader, recordStore: recordStore)
-        
+        let userDefaults = FiltersUserDefaults()
         let viewModel = TrackViewModel(for: model)
-        let trackController = TrackersViewController(track: trackCollection, viewModel: viewModel)
+        let trackController = TrackersViewController(track: trackCollection, viewModel: viewModel, filterUserDefaults: userDefaults)
         trackController.tabBarItem = UITabBarItem(
             title: String(localized: "Trackers"),
             image: UIImage(named: "tracTabBarLogo"),
             selectedImage: UIImage(named: "tracTabBarLogo"))
-
+        
         let trackNavigationController = PlusNavigationController(rootViewController: trackController)
         
         let statisticController = StatisticController()
-
+        
         statisticController.tabBarItem = UITabBarItem(
             title: String(localized: "Statistics"),
             image: UIImage(named: "statisticTabBarLogo"),
@@ -37,9 +39,14 @@ final class AlpabetTests: XCTestCase {
         tabBarController.tabBar.layer.masksToBounds = true
         tabBarController.tabBar.layer.borderWidth = 1
         tabBarController.tabBar.layer.borderColor = UIColor.lightGray.cgColor
-
+        
         XCTAssertNotNil(UIImage(named: "statisticTabBarLogo"))
         
         assertSnapshot(of: tabBarController, as: .image)
+    }
+    private func setupTabBarAppearanceForTests() {
+        // Принудительно для всех tab bar в тестах
+        UITabBar.appearance().tintColor = .systemBlue
+        UITabBar.appearance().unselectedItemTintColor = .systemGray
     }
 }

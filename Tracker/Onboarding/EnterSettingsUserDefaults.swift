@@ -1,9 +1,5 @@
 //  EnterSettingsUserDefaults.swift
 
-protocol CheckEnterProtocol: AnyObject {
-    var enterStatus: Bool { get set} // Статус просмотра онбординга
-}
-
 import UIKit
 
 final class EnterSettingsUserDefaults {

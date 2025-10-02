@@ -10,4 +10,6 @@ protocol TrackCollectionProtocol: AnyObject {
     func updateForDay(_ day: Int) -> Int
     func findText(title: String, store: TrackerStoreReader)
     func changeFilter(day: Int)
+    func filterForDidTracks(day: Int, date: String)
+    func filteForUndidTrack(day: Int, date: String)
 }

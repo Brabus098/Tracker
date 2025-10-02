@@ -350,6 +350,56 @@ extension CoreDataManager {
         }
     }
     
+    func printAllRecords() {
+        let request = TrackerRecordCoreData.fetchRequest()
+        
+        // Предзагружаем все связанные данные
+        request.relationshipKeyPathsForPrefetching = ["tracker", "completitionDate"]
+        request.returnsObjectsAsFaults = false
+        
+        do {
+            let records = try context.fetch(request)
+            print("\n=== TRACKERS WITH COMPLETION DATES ===")
+            print("Total records found: \(records.count)")
+            
+            for record in records {
+                // Принудительно загружаем данные
+                context.refresh(record, mergeChanges: true)
+                
+                // Получаем название трекера
+                let trackerName = record.tracker?.name ?? "Unknown Tracker"
+                let trackerID = record.tracker?.id ?? 0
+                
+                // Получаем даты выполнения (как строки)
+                var completionDates: [String] = []
+                
+                if let completionDatesSet = record.completitionDate as? NSSet {
+                    for case let dateEntity as TrackerCompletionDate in completionDatesSet {
+                        context.refresh(dateEntity, mergeChanges: true)
+                        
+                        // dateEntity.date это String, а не Date!
+                        if let dateString = dateEntity.date as? String {
+                            completionDates.append(dateString)
+                        } else if let date = dateEntity.date {
+                            // Если это не String, выводим как есть
+                            completionDates.append("\(date)")
+                        }
+                    }
+                }
+                
+                print("""
+                📊 Tracker: \(trackerName) (ID: \(trackerID))
+                📅 Completion Dates: \(completionDates)
+                🔢 Total Completions: \(completionDates.count)
+                ---
+                """)
+            }
+            
+        } catch {
+            print("Failed to fetch records: \(error)")
+        }
+    }
+    
     func printAllEntities() {
         let entities = persistentContainer.managedObjectModel.entities
         for entity in entities {

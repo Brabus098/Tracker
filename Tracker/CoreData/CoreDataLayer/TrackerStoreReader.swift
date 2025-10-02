@@ -4,6 +4,11 @@ import Foundation
 import CoreData
 
 final class TrackerStoreReader: NSObject {
+    
+    enum FilterState {
+        case didTracks
+        case unDidTracks
+    }
     weak var delegate: TrackerStoreDelegate?
     weak var filterDelegate: FilterDelegate?
     
@@ -149,8 +154,7 @@ extension TrackerStoreReader: TrackerReaderProtocol{
 extension TrackerStoreReader {
     
     // Метод для обновления fetchedResultsController c учетом фильтра по дням
-    func updateFilterForDay(_ day: Int) -> Int{
-        
+    func updateFilterForDay(_ day: Int) -> Int {
         let newPredicate = NSPredicate(format: "ANY timeTable.weekDays.order == %d", day)
         frc.fetchRequest.predicate = newPredicate
         delegate?.didUpdateData()
@@ -200,4 +204,36 @@ extension TrackerStoreReader {
         }
         return 0
     }
+
+    func filter(to state: FilterState, day: Int, date: String) -> Int {
+        
+        switch state {
+            
+        case .didTracks:
+            let datePredicate = NSPredicate(format: "ANY records.completitionDate.date == %@", date)
+            let dayPredicate = NSPredicate(format: "ANY timeTable.weekDays.order == %d", day)
+
+            frc.fetchRequest.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [datePredicate, dayPredicate])
+        case .unDidTracks:
+            let predicate = NSPredicate(
+                format: "ANY timeTable.weekDays.order == %d AND SUBQUERY(records, $r, ANY $r.completitionDate.date == %@).@count == 0",
+                day,
+                date
+            )
+            frc.fetchRequest.predicate = predicate
+        }
+        
+        do {
+            try frc.performFetch()
+            
+            DispatchQueue.main.async {
+                self.delegate?.didUpdateData()
+            }
+            return frc.fetchedObjects?.count ?? 0
+        } catch {
+            print("[TrackerStoreReader]: Ошибка обновления фильтра: \(error)")
+        }
+        return 0
+    }
 }
+

@@ -16,7 +16,6 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         var startController = OnboardingViewController()
         startController.enterStatusDelegate = userDefaults
         window?.rootViewController = startController
-        /*rootController*/
         window?.makeKeyAndVisible()
     }
 

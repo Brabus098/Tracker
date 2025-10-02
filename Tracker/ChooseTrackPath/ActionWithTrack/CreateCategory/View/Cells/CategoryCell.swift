@@ -40,9 +40,6 @@ final class CategoryCell: UITableViewCell {
         separator.backgroundColor = .backDayGrey
         separator.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(separator)
-        
-        contentView.layer.cornerRadius = 16
-        contentView.layer.masksToBounds = true
         contentView.backgroundColor = .backgroundDay
         
         NSLayoutConstraint.activate([
@@ -68,12 +65,13 @@ extension CategoryCell {
     func configuration(title: String) { categoryTitleLabel.text = title }
     func imageIs(hidden status: Bool) { successImageView.isHidden = status }
     func setSeparatorHidden(_ hidden: Bool) { separator.isHidden = hidden }
+
 }
 
 extension CategoryCell {
     override func prepareForReuse() {
         super.prepareForReuse()
         categoryTitleLabel.text = nil
-        successImageView.image = nil
+        successImageView.isHidden = true
     }
 }

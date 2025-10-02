@@ -1,5 +1,9 @@
 //  TrackersViewController.swift
 
+protocol ActionFilterDelegate: AnyObject {
+    func filterDidUpdate()
+}
+
 import UIKit
 
 final class TrackersViewController: UIViewController {
@@ -12,11 +16,34 @@ final class TrackersViewController: UIViewController {
     private lazy var trackerWriterStore = TrackerStoreWriter(recordStore: self.trackerRecordStore)
     private lazy var trackerCategoryStore = TrackerCategoryStore(trackerWriter: trackerWriterStore, trackerRider: storeReader)
     private var viewModel: TrackViewModel
+    private var filterUserDefaults: FiltersProtocol
     
     // Menu + Blur
     private var blurView: BlurView?
     private var selectedCell: UITableViewCell?
     private var menuView: MenuView?
+    
+    private lazy var filterButton = {
+        let button = UIButton()
+        self.add(newView: button)
+        
+        button.layer.cornerRadius = 16
+        button.layer.masksToBounds = true
+        
+        button.setTitle("Фильтры", for: .normal)
+        
+        button.backgroundColor = UIColor.filterButton
+        button.addAction(UIAction {[weak self]_ in
+            let controller = TrackFilterController()
+            controller.actionWithFilterDelegate = self
+            controller.filterDelegate = self?.filterUserDefaults
+            let navigation = UINavigationController(rootViewController: controller)
+            
+            self?.present(navigation, animated: true)
+        }, for: .touchUpInside)
+        
+        return button
+    }()
     
     private lazy var searchBar = {
         let searchBar = UISearchBar()
@@ -25,6 +52,7 @@ final class TrackersViewController: UIViewController {
         searchBar.placeholder = String(localized: "Search")
         searchBar.removeSystemPadding()
         searchBar.searchTextField.font = UIFont(name: "SFPro-Regular", size: 17)
+        searchBar.barTintColor = .searchBar
         searchBar.layer.borderWidth = 0
         searchBar.layer.masksToBounds = true
         
@@ -45,6 +73,7 @@ final class TrackersViewController: UIViewController {
     private lazy var mainTrackLabel = {
         let label = UILabel()
         label.text = String(localized: "Trackers")
+        label.textColor = .colorMainTrackLabel
         label.textAlignment = .left
         label.font = UIFont(name: "SFPro-Bold", size: 34)
         add(newView: label)
@@ -59,6 +88,7 @@ final class TrackersViewController: UIViewController {
     // MARK: Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
+        clearUserDefaults()
         setupBaseView()
         setupImageView()
         setupConstraint()
@@ -68,11 +98,13 @@ final class TrackersViewController: UIViewController {
         actionWhitDatePicker(datePiker)
         setupLongPressGesture()
         setupTapGesture()
+        setupConstraintForFilterButton()
     }
     
-    init(track: TrackCollectionProtocol, viewModel: TrackViewModel) {
+    init(track: TrackCollectionProtocol, viewModel: TrackViewModel, filterUserDefaults: FiltersProtocol) {
         self.track = track
         self.viewModel = viewModel
+        self.filterUserDefaults = filterUserDefaults
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -88,6 +120,11 @@ final class TrackersViewController: UIViewController {
         viewModel.searchStatus = { [weak self] status in
             self?.changeStateCollection(status: status)
         }
+    }
+    
+    private func clearUserDefaults() {
+        UserDefaults.standard.removeObject(forKey: "filter")
+        UserDefaults.standard.synchronize()
     }
     
     // MARK: Setup Views
@@ -132,6 +169,7 @@ final class TrackersViewController: UIViewController {
         guard let navigationBar = navigationController?.navigationBar else { return }
         
         navigationBar.addSubview(piker)
+        navigationBar.barTintColor = .black
         piker.translatesAutoresizingMaskIntoConstraints = false
         
         NSLayoutConstraint.activate([
@@ -142,7 +180,8 @@ final class TrackersViewController: UIViewController {
     
     private func setupBaseView(){
         bind()
-        view.backgroundColor = .white
+        view.backgroundColor = .mainViewBack
+        track?.collection.backgroundColor = .mainViewBack
         searchBar.delegate = self
         
         NotificationCenter.default.addObserver(forName: Notification.Name("categoryNameDidUpdate"), object: nil, queue: nil, using: {[weak self] _ in
@@ -157,16 +196,6 @@ final class TrackersViewController: UIViewController {
         noTrackImageView.image = UIImage(named: "noTrackImageLogo")
     }
     
-    private func changeImage(status: Bool) {
-        if status {
-            noTrackImageView.image = UIImage(named: "emojiMonocol")
-            questionLabel.text = "Ничего не найдено"
-        } else {
-            noTrackImageView.image = UIImage(named: "noTrackImageLogo")
-            questionLabel.text = "Что будем отслеживать?"
-        }
-    }
-    
     private func setUpNavigationPlusButton(){
         
         guard let navigationBar = navigationController?.navigationBar else { return }
@@ -174,6 +203,7 @@ final class TrackersViewController: UIViewController {
         navigationBar.addSubview(button)
         
         button.setImage(UIImage(named: "plusTarget"), for: .normal)
+        
         button.addTarget(self, action: #selector(leftButtonTapped), for: .touchUpInside)
         button.translatesAutoresizingMaskIntoConstraints = false
         
@@ -217,7 +247,17 @@ final class TrackersViewController: UIViewController {
             searchBar.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             searchBar.trailingAnchor.constraint(equalTo: mainTrackLabel.trailingAnchor),
             searchBar.heightAnchor.constraint(equalToConstant: 36),
-            searchBar.searchTextField.leadingAnchor.constraint(equalTo: searchBar.leadingAnchor, constant: 0)
+            searchBar.searchTextField.leadingAnchor.constraint(equalTo: searchBar.leadingAnchor, constant: 0),
+        ])
+    }
+    
+    private func setupConstraintForFilterButton(){
+        NSLayoutConstraint.activate([
+            // FilterButton
+            filterButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -16),
+            filterButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -140),
+            filterButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 140),
+            filterButton.heightAnchor.constraint(equalToConstant: 50)
         ])
     }
 }
@@ -232,18 +272,12 @@ extension TrackersViewController {
         let weekday = calendarCurrent.component(.weekday, from: sender.date)
         let selectedFormattedDate = WeekDays(rawValue: weekday) // определяем номер дня недели
         track?.currentDate = sender.date // задаем выбранную дату чтобы отключить активность кнопок
-        let actualCountOfTrackForDay = track?.updateForDay(selectedFormattedDate?.rawValue ?? 0 )
-        // определяем день недели для выбранной даты
         
+        let actualCountOfTrackForDay = track?.updateForDay(selectedFormattedDate?.rawValue ?? 0 )
         makeCollectionInvisible(count: actualCountOfTrackForDay ?? 0)
-    }
-    // Метод коллекции срабатывает если треков на выбранный день нет
-    private func makeCollectionInvisible(count: Int){
-        if count == 0 {
-            track?.collection.layer.opacity = 0
-        } else {
-            track?.collection.layer.opacity = 1
-        }
+        // определяем день недели для выбранной даты
+        filterDidUpdate()
+        
     }
 }
 
@@ -272,13 +306,55 @@ extension TrackersViewController: TrackCollectionActionDelegate {
         track?.reloadDataInCollection()
     }
     
-    func changeStateCollection(status: Bool){
+    func changeStateCollection(status: Bool) { // MARK: не трогать не играет роли
+        print("Сработала changeStateCollection")
         if status {
             track?.collection.isHidden = false
             changeImage(status: false)
         } else {
             track?.collection.isHidden = true
             changeImage(status: true)
+        }
+    }
+    
+    // Метод action delegate
+    func showNotFoundImage(status: Bool) {
+        
+        print("Сработал метод action делегата")
+        if status {
+            print("Скрываем коллекцию нету значений")
+            //makeCollectionInvisible(count: 0)
+            changeImage(status: true)
+        } else {
+            print("НЕСКРЫВАЕМ коллекцию нету значений")
+            //makeCollectionInvisible(count: 1)
+            changeImage(status: false)
+        }
+    }
+    
+    private func changeImage(status: Bool) {
+
+        if status {
+            noTrackImageView.image = UIImage(named: "emojiMonocol")
+            noTrackImageView.layer.zPosition = 10
+            questionLabel.text = "Ничего не найдено"
+            questionLabel.layer.zPosition = 10
+        } else {
+            noTrackImageView.image = UIImage(named: "noTrackImageLogo")
+            questionLabel.text = "Что будем отслеживать?"
+        }
+    }
+    
+    // Метод коллекции срабатывает если треков на выбранный день нет
+    private func makeCollectionInvisible(count: Int){
+                
+        if count == 0 {
+            track?.collection.layer.opacity = 0
+            changeImage(status: false)
+            filterButton.isHidden = true
+        } else {
+            track?.collection.layer.opacity = 1
+            filterButton.isHidden = false
         }
     }
 }
@@ -367,7 +443,7 @@ extension TrackersViewController {
         
         if categoryTitle != "Закрепленные" {
             textButtonArray = [ String(localized: "Pin"), String(localized:"Edit"), String(localized:"Delete") ]
-           
+            
         } else {
             textButtonArray = [ String(localized: "Unpin"), String(localized:"Edit"), String(localized:"Delete")]
         }
@@ -510,6 +586,49 @@ extension TrackersViewController: UISearchBarDelegate {
         searchBar.resignFirstResponder() // закрытие клавиатуры
         if searchBar.searchTextField.text?.isEmpty == true {
             track?.collection.isHidden = false
+        }
+    }
+}
+
+
+extension TrackersViewController: ActionFilterDelegate {
+    func filterDidUpdate() {
+        let filterStatus = filterUserDefaults.chooseFilter
+        let todayDate = datePiker.date.formatted().dataFormatter()
+        
+        switch filterStatus {
+        case .allTracks:
+            DispatchQueue.main.async { [weak self] in
+                self?.noTrackImageView.layer.zPosition = 0
+                self?.questionLabel.layer.zPosition = 0
+                self?.track?.changeFilter(day: self?.giveDayNow() ?? 0)
+                self?.filterButton.titleLabel?.textColor = .white
+            }
+        case .trackForActualDate:
+            
+            DispatchQueue.main.async { [weak self] in
+                self?.noTrackImageView.layer.zPosition = 0
+                self?.questionLabel.layer.zPosition = 0
+                self?.filterButton.titleLabel?.textColor = .white
+                self?.datePiker.setDate(Date(), animated: true)
+                self?.track?.changeFilter(day: self?.giveDayNow() ?? 0)
+            }
+            filterUserDefaults.chooseFilter = .allTracks
+        case .didTracks:
+            DispatchQueue.main.async { [weak self] in
+                self?.noTrackImageView.layer.zPosition = 0
+                self?.questionLabel.layer.zPosition = 0
+                self?.filterButton.titleLabel?.textColor = .red
+                self?.track?.filterForDidTracks(day: self?.giveDayNow() ?? 0, date: todayDate)
+            }
+            
+        case .unDidTracks:
+            DispatchQueue.main.async { [weak self] in
+                self?.noTrackImageView.layer.zPosition = 0
+                self?.questionLabel.layer.zPosition = 0
+                self?.filterButton.titleLabel?.textColor = .red
+                self?.track?.filteForUndidTrack(day: self?.giveDayNow() ?? 0, date: todayDate)
+            }
         }
     }
 }

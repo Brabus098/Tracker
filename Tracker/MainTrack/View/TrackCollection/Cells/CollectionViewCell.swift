@@ -52,7 +52,7 @@ final class CollectionViewCell: UICollectionViewCell {
         
         countSuccessLabel.text = "0 дней" // Количество выполненных дней
         
-        plusDayButton.backgroundColor = .white
+        plusDayButton.backgroundColor = .mainViewBack
         backView.backgroundColor = .purple
     }
     
@@ -95,7 +95,7 @@ final class CollectionViewCell: UICollectionViewCell {
     
     private func setupCountSuccessLabel(){
         addSubItem(view: countSuccessLabel)
-        countSuccessLabel.textColor = .black
+        countSuccessLabel.textColor = .colorMainTrackLabel
         countSuccessLabel.font = UIFont(name: "SFPro-Medium", size: 12)
     }
     
