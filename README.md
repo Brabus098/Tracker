@@ -9,9 +9,9 @@
 **Tracker** - полнофункциональное iOS-приложение для формирования и отслеживания полезных привычек. Помогает пользователям сохранять мотивацию через визуализацию прогресса и гибкую систему напоминаний.
 
 <p align="center">
-  <img src="https://github.com/Brabus098/Tracker/blob/main/Assets/ГлавныйЭкран.png?raw=true" width="200" alt="Главный экран">
-  <img src="https://github.com/Brabus098/Tracker/blob/main/Assets/СозданиеТрека.png?raw=true" width="200" alt="Создание трекера">
-  <img src="https://github.com/Brabus098/Tracker/blob/main/Assets/Статистика.png?raw=true" width="200" alt="Статистика">
+  <img src="https://github.com/Brabus098/Tracker/blob/main/ГлавныйЭкран.png?raw=true" width="200" alt="Главный экран">
+  <img src="https://github.com/Brabus098/Tracker/blob/main/СозданиеТрека.png?raw=true" width="200" alt="Создание трекера">
+  <img src="https://github.com/Brabus098/Tracker/blob/main/Статистика.png?raw=true" width="200" alt="Статистика">
 </p>
 
 ## 🚀 Возможности
