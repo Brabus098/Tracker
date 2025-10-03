@@ -13,7 +13,12 @@
   <img src="https://github.com/Brabus098/Tracker/blob/main/Статистика.png?raw=true" width="200" alt="Статистика">
   <img src="https://github.com/Brabus098/Tracker/blob/main/СозданиеТрека.png?raw=true" width="200" alt="Создание трекера">
   <img src="https://github.com/Brabus098/Tracker/blob/main/ВыборРасписания.png?raw=true" width="200" alt="Создание трекера">
-  <img src="https://github.com/Brabus098/Tracker/blob/main/СписокКатегорий.png?raw=true" width="200" alt="Создание трекера">
+  <img src="https://github.com/Brabus098/Tracker/blob/main/СписокКатегорий.png?raw=true" width="200" alt="Выбор категории">
+  <img src="https://github.com/Brabus098/Tracker/blob/main/ТемнаяТема.png?raw=true" width="200" alt="Главный экран - темная тема">
+  <img src="https://github.com/Brabus098/Tracker/blob/main/СменаДаты.png?raw=true" width="200" alt="Смена Даты">
+  <img src="https://github.com/Brabus098/Tracker/blob/main/Фильтры.png?raw=true" width="200" alt="Фильтры">
+
+
 </p>
 
 ## 🚀 Возможности
