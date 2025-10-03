@@ -1,0 +1,68 @@
+# Tracker - Трекер полезных привычек
+
+![Swift](https://img.shields.io/badge/Swift-5.9-FA7343?logo=swift)
+![iOS](https://img.shields.io/badge/iOS-17.0+-lightgrey?logo=apple)
+![Core Data](https://img.shields.io/badge/Core_Data-1E8CBE?logo=apple)
+![Architecture](https://img.shields.io/badge/Architecture-MVVM-blue)
+![UIKit](https://img.shields.io/badge/UI-UIControl-2396F3?logo=apple)
+
+**Tracker** - полнофункциональное iOS-приложение для формирования и отслеживания полезных привычек. Помогает пользователям сохранять мотивацию через визуализацию прогресса и гибкую систему напоминаний.
+
+<p align="center">
+  <img src="https://github.com/Brabus098/Tracker/blob/main/Assets/screen1.png?raw=true" width="200" alt="Главный экран">
+  <img src="https://github.com/Brabus098/Tracker/blob/main/Assets/screen2.png?raw=true" width="200" alt="Создание трекера">
+  <img src="https://github.com/Brabus098/Tracker/blob/main/Assets/screen3.png?raw=true" width="200" alt="Статистика">
+</p>
+
+## 🚀 Возможности
+
+### 🎯 Основной функционал
+- **Создание трекеров** привычек и нерегулярных событий
+- **Гибкое расписание** с настройкой дней недели
+- **Категории трекеров** с возможностью редактирования и удаления
+- **Система поиска** и фильтрации по статусу выполнения
+- **Закрепление** важных трекеров в верхней части
+
+### 📊 Аналитика и статистика
+- **Визуализация прогресса** - количество завершенных дней
+- **Детальная статистика**:
+  - 🏆 Лучший период (максимальное количество дней без перерыва)
+  - ✅ Идеальные дни (все привычки выполнены)
+  - 📈 Трекеров завершено (общее количество)
+  - 📊 Среднее значение выполненных привычек в день
+
+### 🎨 Пользовательский опыт
+- **Кастомизация** трекеров через выбор эмодзи и цвета
+- **Темная тема** с поддержкой системных настроек
+- **Интуитивный онбординг** для новых пользователей
+- **Локализованный интерфейс** на русском языке
+
+## 🛠 Технологический стек
+
+**Языки программирования:**  
+![Swift](https://img.shields.io/badge/Swift-FA7343?style=for-the-badge&logo=swift&logoColor=white)
+
+**iOS Frameworks:**  
+![UIKit](https://img.shields.io/badge/UIKit-2396F3?style=for-the-badge&logo=apple&logoColor=white)
+![Core Data](https://img.shields.io/badge/Core_Data-1E8CBE?style=for-the-badge&logo=apple&logoColor=white)
+
+**Tools & Platforms:**  
+![Xcode](https://img.shields.io/badge/Xcode-1575F9?style=for-the-badge&logo=xcode&logoColor=white)
+![Git](https://img.shields.io/badge/Git-F05032?style=for-the-badge&logo=git&logoColor=white)
+![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)
+
+**Architecture & Methods:**  
+![MVVM](https://img.shields.io/badge/Architecture-MVVM-FA7343?style=for-the-badge)
+
+## ⚙️ Установка и запуск
+
+### Требования
+- macOS 14.0+
+- Xcode 15.0+
+- iOS 17.0+
+
+### Быстрый старт
+```bash
+git clone https://github.com/Brabus098/Tracker.git
+cd Tracker
+open Tracker.xcodeproj
