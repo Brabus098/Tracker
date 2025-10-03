@@ -103,7 +103,7 @@ Reactive UI - автоматическое обновление интерфей
 
 🔄 В планах: Экспорт статистики
 
-##👨‍💻 Автор
+## 👨‍💻 Автор
 Vladimir - iOS Developer
 
 <p align="center"> <a href="https://t.me/Vov4eg777"> <img src="https://img.shields.io/badge/Telegram-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white&color=FA7343" alt="Telegram"/> </a> <a href="mailto:olsh0988@gmail.com"> <img src="https://img.shields.io/badge/Gmail-D14836?style=for-the-badge&logo=gmail&logoColor=white&color=FA7343" alt="Email"/> </a> <a href="https://docs.google.com/document/d/18caT1lR7wfQcId3kl3MaWkGpnjQqEGYBz7goR_59zEw/edit?usp=sharing"> <img src="https://img.shields.io/badge/Resume-4285F4?style=for-the-badge&logo=google-drive&logoColor=white&color=FA7343" alt="Resume"/> </a> </p>
