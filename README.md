@@ -73,3 +73,6 @@
 git clone https://github.com/Brabus098/Tracker.git
 cd Tracker
 open Tracker.xcodeproj
+Выберите симулятор или подключите устройство
+Нажмите Cmd + R для сборки и запуска
+Для тестирования создайте несколько привычек с разными расписаниями
