@@ -10,8 +10,8 @@
 
 <p align="center">
   <img src="https://github.com/Brabus098/Tracker/blob/main/Assets/ГлавныйЭкран.png?raw=true" width="200" alt="Главный экран">
-  <img src="https://github.com/Brabus098/Tracker/blob/main/Assets/screen2.png?raw=true" width="200" alt="Создание трекера">
-  <img src="https://github.com/Brabus098/Tracker/blob/main/Assets/screen3.png?raw=true" width="200" alt="Статистика">
+  <img src="https://github.com/Brabus098/Tracker/blob/main/Assets/СозданиеТрека.png?raw=true" width="200" alt="Создание трекера">
+  <img src="https://github.com/Brabus098/Tracker/blob/main/Assets/Статистика.png?raw=true" width="200" alt="Статистика">
 </p>
 
 ## 🚀 Возможности
