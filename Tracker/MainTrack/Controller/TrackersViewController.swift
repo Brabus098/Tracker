@@ -1,7 +1,7 @@
 //  TrackersViewController.swift
 
 import UIKit
-
+import AppMetricaCore
 final class TrackersViewController: UIViewController {
     
     weak var track: TrackCollectionProtocol? // ссылка на коллекцию
@@ -35,6 +35,7 @@ final class TrackersViewController: UIViewController {
             controller.filterDelegate = self?.filterUserDefaults
             let navigation = UINavigationController(rootViewController: controller)
             
+            self?.sendMetrics(mainAction: "click_filterButton", metricsAction: .addTrack)
             self?.present(navigation, animated: true)
         }, for: .touchUpInside)
         
@@ -94,6 +95,7 @@ final class TrackersViewController: UIViewController {
     // MARK: Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
+        openController()
         clearUserDefaults()
         setupBaseView()
         setupImageView()
@@ -120,6 +122,7 @@ final class TrackersViewController: UIViewController {
     
     deinit {
         NotificationCenter.default.removeObserver(self)
+        sendMetrics(mainAction: "CloseController", metricsAction: .close)
     }
     
     func bind(){
@@ -131,6 +134,47 @@ final class TrackersViewController: UIViewController {
     private func clearUserDefaults() {
         UserDefaults.standard.removeObject(forKey: "filter")
         UserDefaults.standard.synchronize()
+    }
+    
+    enum MetricsAction: String {
+        case open = "open"
+        case close = "close"
+        case addTrack = "add_track"
+        case track = "track"
+        case filter = "filter"
+        case edit = "edit"
+        case delete = "delete"
+    }
+    
+    private func sendMetrics(mainAction: String, metricsAction: MetricsAction) {
+        var parameters = [String: String]()
+        parameters["event:"] = mainAction
+        parameters["screen:"] = "Main"
+        
+        switch metricsAction {
+        case .open, .close:
+            return
+        case .addTrack:
+            parameters["items"] = "add_track"
+        case .track:
+            parameters["items"] = "track"
+        case .filter:
+            parameters["items"] = "filter"
+        case .edit:
+            parameters["items"] = "edit"
+        case .delete:
+            parameters["items"] = "delete"
+        }
+        
+        AppMetrica.reportEvent(name: metricsAction.rawValue,
+                               parameters: parameters,
+                               onFailure: { error in
+            print("[TrackersViewController]: REPORT ERROR: %@", error.localizedDescription)
+        })
+    }
+    
+    private func openController(){
+        sendMetrics(mainAction: "Open_Controler", metricsAction: .open)
     }
     
     // MARK: Setup Views
@@ -244,8 +288,10 @@ final class TrackersViewController: UIViewController {
     }
     
     @objc private func leftButtonTapped(){
+        sendMetrics(mainAction: "AddTrack", metricsAction: .addTrack)
         let createTrackController = ChooseTrackController()
         createTrackController.parentTrackerVC = self
+        
         let trackNavigation = UINavigationController(rootViewController: createTrackController)
         DispatchQueue.main.async {
             self.present(trackNavigation, animated: true)
@@ -333,6 +379,7 @@ extension TrackersViewController: TrackCollectionActionDelegate {
     
     // Метод вызываемый делегирующим объектом(коллекцией) реагирует на изменение состояния кнопки в ячейки
     func didCompleteTracker(_ trackerId: UInt) {
+        sendMetrics(mainAction: "TapOnTrack", metricsAction: .track)
         let todayDateArray = datePiker.date.formatted().dataFormatter()
         CoreDataManager.shared.updateTimeTableForTrackWithId(id: Int(trackerId), actualDate: todayDateArray)
         track?.reloadDataInCollection()
@@ -404,7 +451,6 @@ extension TrackersViewController {
         guard let track else { return }
         
         let location = tap.location(in: track.collection)
-        
         switch tap.state {
             
         case .began:
@@ -563,6 +609,7 @@ extension TrackersViewController: CustomMenuDelegate {
         switch isWas{
             
         case .delete:
+            sendMetrics(mainAction: "deleteTracks", metricsAction: .delete)
             let action = UIAlertAction(title: "Удалить", style: .destructive, handler: {_ in
                 try? CoreDataManager.shared.removeTrack(with: chooseTitle)
             })
@@ -573,6 +620,7 @@ extension TrackersViewController: CustomMenuDelegate {
             present(alert, animated: true)
             
         case .edit:
+            sendMetrics(mainAction: "EditTrack", metricsAction: .edit)
             let emoji = EmojiCollection()
             let color = ColorCollection()
             let model = RegularTrackModel()

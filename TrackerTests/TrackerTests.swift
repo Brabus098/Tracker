@@ -24,7 +24,7 @@ final class AlpabetTests: XCTestCase {
         let trackNavigationController = setupPlusController()
         let statisticController = setupStatisticController()
         let tabBarController = setupTabBar(firstController: trackNavigationController, secondController: statisticController)
-        tabBarController.tabBar.tintColor = .red // для теста светлой/темной темы
+        //tabBarController.tabBar.tintColor = .red // для теста светлой/темной темы
         
         XCTAssertNotNil(UIImage(named: "statisticTabBarLogo"))
         
