@@ -65,6 +65,12 @@ final class TrackCollection: NSObject, UICollectionViewDataSource {
             buttonState = .unActive
         } else if checkResult {
             buttonState = .selected
+        } else if !checkResult  {
+            let acDate = actionDelegate?.giveActualDate()
+            let checkResult = trackerStore.checkContainsDate(id: id, date: acDate!.formatted().dataFormatter())
+            if checkResult {
+                buttonState = .selected
+            }
         }
         return buttonState
     }
