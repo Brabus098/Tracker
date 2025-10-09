@@ -1,7 +1,7 @@
 //  Tracker.swift
 
 // Сущность для хранения инфы о трекере привычки и нерегулярные события
-struct Tracker{
+struct Tracker {
     let id: UInt
     let name: String
     let color: String
@@ -9,7 +9,7 @@ struct Tracker{
     let timeTable: TimeTabel
 }
 
-struct TimeTabel{
+struct TimeTabel {
     let dayCount: Int
     let dayOfWeek: [WeekDay]
 }
@@ -46,6 +46,18 @@ enum WeekDays: Int {
     case Friday = 6
     case Saturday = 7
     case Sunday = 1
+    
+    func toWeekDay() -> WeekDay? {
+        switch self {
+        case .Monday: return .Monday
+        case .Tuesday: return .Tuesday
+        case .Wednesday: return .Wednesday
+        case .Thursday: return .Thursday
+        case .Friday: return .Friday
+        case .Saturday: return .Saturday
+        case .Sunday: return .Sunday
+        }
+    }
 }
 
 import UIKit
@@ -72,7 +84,7 @@ extension String {
         case "color15": return UIColor.color15
         case "color16": return UIColor.color16
         case "color17": return UIColor.color17
-
+            
         default: return UIColor.systemGray
         }
     }

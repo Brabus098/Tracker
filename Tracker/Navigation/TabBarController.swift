@@ -26,14 +26,18 @@ final class TabBarController: UITabBarController {
                                                   image: UIImage(named: "tracTabBarLogo"),
                                                   tag: 0)
         
-        let statisticController = StatisticController()
+        let modelForStatisticVC = StatisticModel()
+        let viewModelForStatisticVC = StatisticViewModel(model: modelForStatisticVC)
+        let statisticController = StatisticController(viewModel: viewModelForStatisticVC)
+        let navigationStatisticController = UINavigationController(rootViewController: statisticController)
+        
         statisticController.tabBarItem = UITabBarItem(title: String(localized: "Statistics"),
                                                       image: UIImage(named: "statisticTabBarLogo"),
                                                       tag: 1)
         
-        self.setViewControllers([trackNavigationController, statisticController], animated: true)
+        self.setViewControllers([trackNavigationController, navigationStatisticController], animated: true)
     }
-
+    
     private func setupTabBar() {
         self.tabBar.layer.masksToBounds = true
         
@@ -51,4 +55,3 @@ final class TabBarController: UITabBarController {
         ])
     }
 }
-
