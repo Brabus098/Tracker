@@ -417,7 +417,7 @@ extension TrackersViewController: TrackCollectionActionDelegate {
             questionLabel.layer.zPosition = 10
         } else {
             noTrackImageView.image = UIImage(named: "noTrackImageLogo")
-            questionLabel.text = "Что будем отслеживать?"
+            questionLabel.text = NSLocalizedString("What are we going to track?", comment: "")
         }
     }
     
