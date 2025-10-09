@@ -45,11 +45,15 @@ final class StatisticModel {
     // Трекеров завершенно
     private func checkFinishTrackers() -> Int {
         let dataArray = store.loadDate()
+        var counter = 0
         var dictWithDate = [String:Int]()
         for i in dataArray { dictWithDate[i, default: 0] += 1 }
         dateDictionary = dictWithDate
-        let firstValueToReturn = dateDictionary.count
-        return dictWithDate.count
+        
+        for i in dictWithDate {
+            counter += i.value
+        }
+        return counter
     }
     
     // Проверяем среднее количество выполняемых треков в день
