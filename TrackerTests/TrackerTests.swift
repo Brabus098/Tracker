@@ -48,8 +48,8 @@ final class AlpabetTests: XCTestCase {
     }
     
     private func setupStatisticController() -> StatisticController {
-        
-        let controller = StatisticController()
+        let viewModel = StatisticViewModel(model: StatisticModel())
+        let controller = StatisticController(viewModel: viewModel)
         controller.tabBarItem = UITabBarItem(
             title: String(localized: "Statistics"),
             image: UIImage(named: "statisticTabBarLogo"),
