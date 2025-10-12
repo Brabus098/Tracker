@@ -11,6 +11,5 @@ final class PlusNavigationController: UINavigationController {
     
     private func setupTabBar(){
         navigationBar.tintColor = .black
-        navigationBar.backgroundColor = .white
     }
 }

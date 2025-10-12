@@ -4,6 +4,12 @@ import Foundation
 import CoreData
 
 final class TrackerStoreReader: NSObject {
+    
+    enum FilterState {
+        case didTracks
+        case unDidTracks
+    }
+    
     weak var delegate: TrackerStoreDelegate?
     weak var filterDelegate: FilterDelegate?
     
@@ -149,8 +155,7 @@ extension TrackerStoreReader: TrackerReaderProtocol{
 extension TrackerStoreReader {
     
     // Метод для обновления fetchedResultsController c учетом фильтра по дням
-    func updateFilterForDay(_ day: Int) -> Int{
-        
+    func updateFilterForDay(_ day: Int) -> Int {
         let newPredicate = NSPredicate(format: "ANY timeTable.weekDays.order == %d", day)
         frc.fetchRequest.predicate = newPredicate
         delegate?.didUpdateData()
@@ -176,8 +181,6 @@ extension TrackerStoreReader {
             if let first = i.name.first, first == element.first {
                 finFilter(trackName: String(first))
             }
-            //TODO: Дописать условия про половину слова
-            
             if i.name == element { return finFilter(trackName: i.name) }
         }
         return nil
@@ -199,5 +202,83 @@ extension TrackerStoreReader {
             print("[TrackerStoreReader]: Ошибка обновления фильтра: \(error)")
         }
         return 0
+    }
+    
+    func filter(to state: FilterState, day: Int, date: String) -> Int {
+        
+        switch state {
+            
+        case .didTracks:
+            let datePredicate = NSPredicate(format: "ANY records.completitionDate.date == %@", date)
+            let dayPredicate = NSPredicate(format: "ANY timeTable.weekDays.order == %d", day)
+            
+            frc.fetchRequest.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [datePredicate, dayPredicate])
+        case .unDidTracks:
+            let predicate = NSPredicate(
+                format: "ANY timeTable.weekDays.order == %d AND SUBQUERY(records, $r, ANY $r.completitionDate.date == %@).@count == 0",
+                day,
+                date
+            )
+            frc.fetchRequest.predicate = predicate
+        }
+        
+        do {
+            try frc.performFetch()
+            
+            DispatchQueue.main.async {
+                self.delegate?.didUpdateData()
+            }
+            return frc.fetchedObjects?.count ?? 0
+        } catch {
+            print("[TrackerStoreReader]: Ошибка обновления фильтра: \(error)")
+        }
+        return 0
+    }
+}
+// MARK: methods for statistic
+extension TrackerStoreReader {
+    // Метод возращает все даты выполненых треков
+    func loadDate() -> [String] {
+        var stringArrayToReturn = [String]()
+        
+        do {
+            try frc.performFetch()
+            guard let fetchedObjects = frc.fetchedObjects else { return [""] }
+            
+            for trackerDate in fetchedObjects {
+                if let dateArray = trackerDate.records?.completitionDate as? NSSet {
+                    let completionDates = dateArray.allObjects.compactMap { $0 as? TrackerCompletionDate }
+                    let dates = completionDates.compactMap { $0.date }
+                    stringArrayToReturn += dates
+                }
+            }
+        } catch {
+            print("[TrackerStoreReader]: Не удалось получить объекты из fetchedResultsController")
+        }
+        return stringArrayToReturn
+    }
+    
+    // Метод возвращает словарь с необходимым количеством треков для каждого из дней недели
+    func loadCountTrackForDayOfWeek() -> [WeekDay:Int] {
+        var dict = [WeekDay:Int]()
+        
+        do {
+            try frc.performFetch()
+            guard let object = frc.fetchedObjects else { return dict }
+            
+            for track in object {
+                let array = track.timeTable?.weekDays?.allObjects as? [WeekDayCoreData]
+                if let dayArray = array {
+                    for i in dayArray {
+                        if let day = i.dayName, let weekDay = WeekDay(rawValue: day) {
+                            dict[weekDay ,default: 0] += 1
+                        }
+                    }
+                }
+            }
+        } catch {
+            print("[TrackerStoreReader]: Не удалось получить объекты из fetchedResultsController")
+        }
+        return dict
     }
 }

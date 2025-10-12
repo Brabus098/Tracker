@@ -1,7 +1,6 @@
 //  TrackCollection.swift
 
 import UIKit
-import CoreData
 
 final class TrackCollection: NSObject, UICollectionViewDataSource {
     
@@ -17,7 +16,7 @@ final class TrackCollection: NSObject, UICollectionViewDataSource {
     
     weak var actionDelegate: TrackCollectionActionDelegate?
     
-    // MARK: Storeы
+    // MARK: Stores
     private let trackerStore: TrackerStoreReader
     private let recordStore: TrackerRecordStoreProtocol
     
@@ -66,6 +65,12 @@ final class TrackCollection: NSObject, UICollectionViewDataSource {
             buttonState = .unActive
         } else if checkResult {
             buttonState = .selected
+        } else if !checkResult  {
+            let acDate = actionDelegate?.giveActualDate()
+            let checkResult = trackerStore.checkContainsDate(id: id, date: acDate!.formatted().dataFormatter())
+            if checkResult {
+                buttonState = .selected
+            }
         }
         return buttonState
     }
@@ -175,7 +180,16 @@ extension TrackCollection {
         actionDelegate?.changeStateCollection(status: result > 0)
     }
     
-    func changeFilter(day: Int){
+    func changeFilter(day: Int) {
         trackerStore.updateFilterForDay(day)
+    }
+    
+    func filterForDidTracks(day: Int, date: String) {
+        let result = trackerStore.filter(to: .didTracks, day: day, date: date)
+        actionDelegate?.showNotFoundImage(status: result == 0)
+    }
+    func filteForUndidTrack(day: Int, date: String) {
+        let result = trackerStore.filter(to: .unDidTracks, day: day, date: date)
+        actionDelegate?.showNotFoundImage(status: result == 0)
     }
 }

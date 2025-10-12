@@ -42,6 +42,8 @@ final class ChooseTrackController: UIViewController{
         button.layer.masksToBounds = true
         button.layer.cornerRadius = 16
         
+        button.isEnabled = false
+        
         button.addAction(UIAction(handler: { _ in
             
             let unRegularController = UnRegularController()

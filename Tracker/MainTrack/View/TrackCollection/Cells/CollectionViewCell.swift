@@ -51,9 +51,7 @@ final class CollectionViewCell: UICollectionViewCell {
         addSubItem(view: emojiLabel)
         
         countSuccessLabel.text = "0 дней" // Количество выполненных дней
-        
-        plusDayButton.backgroundColor = .white
-        backView.backgroundColor = .purple
+        plusDayButton.backgroundColor = .mainViewBack
     }
     
     private func setupButton(){
@@ -89,13 +87,14 @@ final class CollectionViewCell: UICollectionViewCell {
     
     private func setupEmojiBackground(){
         addSubItem(view: emojiBackColor)
+        
         emojiBackColor.backgroundColor = .emogiBack
         addLayers(for: emojiBackColor, layer: 27 / 2)
     }
     
     private func setupCountSuccessLabel(){
         addSubItem(view: countSuccessLabel)
-        countSuccessLabel.textColor = .black
+        countSuccessLabel.textColor = .colorMainTrackLabel
         countSuccessLabel.font = UIFont(name: "SFPro-Medium", size: 12)
     }
     
@@ -162,8 +161,12 @@ extension CollectionViewCell {
         
         setActualBackColorForImage()
         
-        let ending = Int(counter).findThe()
-        countSuccessLabel.text = String(counter) + " " + ending // Количество успешных дней
+        let ending = Int(counter)
+        let localizedString = String.localizedStringWithFormat(
+            NSLocalizedString("ending", comment: ""),
+            ending
+        )
+        countSuccessLabel.text = localizedString
         self.indexPath = indexPath
         self.trackerId = UInt(trackerId)
         

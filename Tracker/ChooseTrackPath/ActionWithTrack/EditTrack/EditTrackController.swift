@@ -154,8 +154,12 @@ final class EditTrackController: UIViewController {
         guard let viewModel = viewModel else { return }
         
         viewModel.actualRecordCount = { [weak self] actualRecord in
-            if let newSuf = Int(actualRecord)?.findThe() {
-                self?.recordTitle.text = actualRecord + " " + newSuf
+            
+            if let newSuf = Int(actualRecord) {
+                let localizedString = String.localizedStringWithFormat(
+                    NSLocalizedString("ending", comment: ""),
+                    newSuf)
+                self?.recordTitle.text = localizedString
             }
         }
         

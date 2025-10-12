@@ -1,0 +1,17 @@
+/* 
+  Localizable.strings
+  Tracker
+
+  Created by Владимир on 26.09.2025.
+  
+*/
+
+"What are we going to track?" = "Что будем отслеживать?";
+"Search" = "Поиск";
+"Trackers" = "Трекеры";
+"Statistics" = "Статистика";
+"Pin" = "Закрепить";
+"Edit" = "Редактировать";
+"Delete" = "Удалить";
+"Unpin" = "Открепить";
+"Filters" = "Фильтры";
