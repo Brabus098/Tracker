@@ -691,7 +691,11 @@ extension TrackersViewController: ActionFilterDelegate {
                 self?.filterButton.titleLabel?.textColor = .white
                 self?.datePiker.setDate(Date(), animated: true)
                 self?.labelForDataPiker.text = self?.datePiker.date.toShortFormat()
+<<<<<<< HEAD
                 self?.track?.changeFilter(day: self?.giveDayNow() ?? 0, dateForFilter:self?.datePiker.date.self.toShortFormat() ?? "")
+=======
+                self?.track?.changeFilter(day: self?.giveDayNow() ?? 0)
+>>>>>>> a0411ad26fce5a99c6cf797e5eb5b660f15b8072
             }
             filterUserDefaults.chooseFilter = .allTracks
         case .didTracks:
